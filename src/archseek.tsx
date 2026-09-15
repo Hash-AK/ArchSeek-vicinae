@@ -5,12 +5,13 @@ import {
 	List,
 	showToast,
 	Toast,
+	Color,
 } from "@vicinae/api";
 
 
 export default function ArchSeek() {
     return(
-        <List searchBarPlaceholder="Enter a search term to start">
+        <List isShowingDetail searchBarPlaceholder="Enter a search term to start">
 			<List.Item title="Open the Arch Wiki" icon="Arch_Linux_logo.svg" actions={
 				<ActionPanel>
 					<Action.CopyToClipboard title="Copy url to clipboard" content="https://wiki.archlinux.org/title/Main_page" />
@@ -18,6 +19,7 @@ export default function ArchSeek() {
 				</ActionPanel>
 			}
 			/>
+			<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
 			</List>
 	
     );
