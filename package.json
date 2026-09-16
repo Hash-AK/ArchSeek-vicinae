@@ -28,7 +28,9 @@
     "@vicinae/api": "^0.28.1"
   },
   "devDependencies": {
-    "typescript": "^5.9.2",
-    "@biomejs/biome": "2.3.2"
+    "@biomejs/biome": "2.3.2",
+    "@types/turndown": "^5.0.6",
+    "turndown": "^7.2.4",
+    "typescript": "^5.9.2"
   }
 }
