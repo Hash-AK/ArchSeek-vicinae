@@ -29,9 +29,10 @@ function useWikiPage(){
 			if (!response.ok) {
 				throw new Error('Failed to fetch the page: ${response.status}');
 			}
-			return response.text();
-		}).then((data: string) => {
-			setWikiText(data)
+			return response.json();
+		}).then((data: any) => {
+			console.log(typeof data)
+			setWikiText(data.parse.text["*"])
 		})
 	},[])
 	return wikiText
@@ -47,7 +48,7 @@ export default function ArchSeek() {
 					<Action.OpenInBrowser title="Open in browser" url="https://wiki.archlinux.org/title/Main_page"/>
 				</ActionPanel>
 			} detail={
-			<List.Item.Detail markdown={"# The Arch Wiki \n\n\n" + turndownService.turndown(wikiText.replaceAll("\\n","\n"))} />
+			<List.Item.Detail markdown={"# The Arch Wiki\n" + turndownService.turndown(wikiText.replaceAll("\\n","\n"))} />
 			} />
 			<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
 			</List>
