@@ -33,12 +33,19 @@ function useWikiPage(title:any){
 	let urlEncodedTitle = encodeURI(title)
 	const [wikiText, setWikiText] = useState<string>("Loading content...")
 	useEffect(() => {
-		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedTitle}&format=json&prop=text`).then((response) => {
+		if (title == null) {
+			return
+		}
+		if (title.length == 0 ){
+			return
+		}
+		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedTitle}&format=json&prop=text&redirects=1`,{redirect: 'follow'}).then((response) => {
 			if (!response.ok) {
 				throw new Error('Failed to fetch the page: ${response.status}');
 			}
 			return response.json();
 		}).then((data: any) => {
+
 			setWikiText(data.parse.text["*"])
 		})
 	},[title])
@@ -54,8 +61,8 @@ function useSearchWikiPage(searchTerm: string) {
 
 	useEffect(() => {
 		if (searchTerm.length == 0){
-			console.log("searchTerm: " + searchTerm)
-			console.log("wikiSearch : " + String(wikiSearch.titles))
+			//console.log("searchTerm: " + searchTerm)
+			//console.log("wikiSearch : " + String(wikiSearch.titles))
 			setWikiSearch(defaultOuput)
 			return
 		}
@@ -88,15 +95,24 @@ function useSearchWikiPage(searchTerm: string) {
 export default function ArchSeek() {
 	const [query, setQuery] = useState("");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
-	const [state,setState] = useState({ searchText: ""})
-
+	let selectedTitle
 	let wikiText = {} as SearchResult;
+
 	wikiText = useSearchWikiPage(query)
+	console.log(wikiText)
+	console.log(wikiText.titles)
+	if (selectedId != null){
+	selectedTitle = wikiText.titles[Number(selectedId)]
+	} else {
+		selectedTitle = ""
+	}
+	let wikiPage = useWikiPage(selectedTitle)
+
 	console.log(selectedId)
 
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
-			{state.searchText === "" && wikiText.titles.length === 0 ? (
+			{query === "" && wikiText.titles.length === 0 ? (
 				<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
 ) : (
 
@@ -110,11 +126,18 @@ export default function ArchSeek() {
 			} />*/
 
 		 wikiText.titles.map((title, index) =>
-			<List.Item id={String(index)} key={title} title={title} detail={
-				<List.Item.Detail markdown={turndownService.turndown("<h1>test</h1>")}/>
+		 //{index === selectedId}(
+			<List.Item id={String(index)} key={title} title={title} icon="Arch_Linux_logo.svg" detail={
+				<List.Item.Detail markdown={turndownService.turndown(wikiPage)}/>
+			} actions={
+				<ActionPanel>
+					<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} />
+					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]}/>
+				</ActionPanel>
 			}/>
+		) 
 			)
-			)
+			
 		}
 			</List>
 	
