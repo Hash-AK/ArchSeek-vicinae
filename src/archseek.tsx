@@ -29,11 +29,11 @@ interface SearchResult {
 	
 }
 	*/
-function useWikiPage(url:any){
-	let urlEncodedSearchTerm = encodeURI(url)
+function useWikiPage(title:any){
+	let urlEncodedTitle = encodeURI(title)
 	const [wikiText, setWikiText] = useState<string>("Loading content...")
 	useEffect(() => {
-		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedSearchTerm}&format=json&prop=text`).then((response) => {
+		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedTitle}&format=json&prop=text`).then((response) => {
 			if (!response.ok) {
 				throw new Error('Failed to fetch the page: ${response.status}');
 			}
@@ -41,29 +41,29 @@ function useWikiPage(url:any){
 		}).then((data: any) => {
 			setWikiText(data.parse.text["*"])
 		})
-	},[url])
+	},[title])
 	return wikiText
 }
 function useSearchWikiPage(searchTerm: string) {
 	const defaultOuput = {} as SearchResult;
 	defaultOuput.query =""
-	defaultOuput.titles = [""]
-	defaultOuput.description = [""]
-	defaultOuput.urls = [""]
+	defaultOuput.titles = []
+	defaultOuput.description = []
+	defaultOuput.urls = []
 	const [wikiSearch, setWikiSearch] = useState<SearchResult>(defaultOuput)
 
 	useEffect(() => {
 		if (searchTerm.length == 0){
 			return
 		}
-		console.log("searchTerm: " + searchTerm)
+		//console.log("searchTerm: " + searchTerm)
 		let urlEncodedSearchTerm = encodeURI(searchTerm)
-		console.log("urlEncodedSearchTerm: "+ urlEncodedSearchTerm)
+		//console.log("urlEncodedSearchTerm: "+ urlEncodedSearchTerm)
 		fetch(`https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`).then((response) => {
 			if (!response.ok){
 				throw new Error('Failed to fetch the search page: ${response.status}');
 			}
-			console.log(response)
+			//console.log(response)
 			return response.json()
 		}).then((data) => {
 			let typedData = data as [string,string[],string[],string[]]
@@ -84,12 +84,13 @@ function useSearchWikiPage(searchTerm: string) {
 
 export default function ArchSeek() {
 	const [query, setQuery] = useState("");
+	const [selectedId, setSelectedId] = useState<string | null>(null);
 	let wikiText = {} as SearchResult;
 	wikiText = useSearchWikiPage(query)
-	
+	console.log(selectedId)
 
     return(
-        <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start">
+        <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
 			<List.Item title="Open the Arch Wiki" icon="Arch_Linux_logo.svg" actions={
 				<ActionPanel>
 					<Action.CopyToClipboard title="Copy url to clipboard" content="https://wiki.archlinux.org/title/Main_page" />
@@ -100,12 +101,11 @@ export default function ArchSeek() {
 			} />
 			
 			{wikiText.titles.map((title, index) =>
-			<List.Item key={title} title={title} detail={
+			<List.Item id={String(index)} key={title} title={title} detail={
 				<List.Item.Detail markdown={turndownService.turndown("<h1>test</h1>")}/>
 			}/>
 			)}
 			
-			<List.Item key={wikiText.titles[0]} title={wikiText.titles[0]}></List.Item>
 			<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
 			</List>
 	
