@@ -54,6 +54,9 @@ function useSearchWikiPage(searchTerm: string) {
 
 	useEffect(() => {
 		if (searchTerm.length == 0){
+			console.log("searchTerm: " + searchTerm)
+			console.log("wikiSearch : " + String(wikiSearch.titles))
+			setWikiSearch(defaultOuput)
 			return
 		}
 		//console.log("searchTerm: " + searchTerm)
@@ -85,28 +88,34 @@ function useSearchWikiPage(searchTerm: string) {
 export default function ArchSeek() {
 	const [query, setQuery] = useState("");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const [state,setState] = useState({ searchText: ""})
+
 	let wikiText = {} as SearchResult;
 	wikiText = useSearchWikiPage(query)
 	console.log(selectedId)
 
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
-			<List.Item title="Open the Arch Wiki" icon="Arch_Linux_logo.svg" actions={
+			{state.searchText === "" && wikiText.titles.length === 0 ? (
+				<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
+) : (
+
+			/*<List.Item title="Open the Arch Wiki" icon="Arch_Linux_logo.svg" actions={
 				<ActionPanel>
 					<Action.CopyToClipboard title="Copy url to clipboard" content="https://wiki.archlinux.org/title/Main_page" />
 					<Action.OpenInBrowser title="Open in browser" url="https://wiki.archlinux.org/title/Main_page"/>
 				</ActionPanel>
 			} detail={
 			<List.Item.Detail markdown={"# The Arch Wiki\n" + wikiText.titles} />
-			} />
-			
-			{wikiText.titles.map((title, index) =>
+			} />*/
+
+		 wikiText.titles.map((title, index) =>
 			<List.Item id={String(index)} key={title} title={title} detail={
 				<List.Item.Detail markdown={turndownService.turndown("<h1>test</h1>")}/>
 			}/>
-			)}
-			
-			<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
+			)
+			)
+		}
 			</List>
 	
     );
