@@ -13,7 +13,7 @@ import {
 } from 'react';
 import TurndownService, * as Turndown from "turndown"
 
-var turndownService = new TurndownService()
+var turndownService = new TurndownService({codeBlockStyle: `fenced`})
 interface SearchResult {
 	query: string;
 	titles: string[];
@@ -45,7 +45,6 @@ function useWikiPage(title:any){
 			}
 			return response.json();
 		}).then((data: any) => {
-
 			setWikiText(data.parse.text["*"])
 		})
 	},[title])
@@ -128,11 +127,12 @@ export default function ArchSeek() {
 		 wikiText.titles.map((title, index) =>
 		 //{index === selectedId}(
 			<List.Item id={String(index)} key={title} title={title} icon="Arch_Linux_logo.svg" detail={
-				<List.Item.Detail markdown={turndownService.turndown(wikiPage)}/>
+				<List.Item.Detail markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)}/>
 			} actions={
 				<ActionPanel>
 					<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} />
 					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]}/>
+					<Action.OpenInBrowser title="DEV: open raw url in browser" url={`https://wiki.archlinux.org/api.php?action=parse&page=${title}&format=json&prop=text&redirects=1`}/>
 				</ActionPanel>
 			}/>
 		) 
