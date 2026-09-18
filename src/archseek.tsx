@@ -53,6 +53,7 @@ function useWikiPage(title:any){
 	},[title])
 	return wikiText
 }
+
 function useSearchWikiPage(searchTerm: string) {
 	const defaultOuput = {} as SearchResult;
 	defaultOuput.query =""
@@ -66,23 +67,33 @@ function useSearchWikiPage(searchTerm: string) {
 			setWikiSearch(defaultOuput)
 			return
 		}
+		const archWikiUrlRegexMarch = searchTerm.match(/^(https:\/\/)?(wiki.archlinux.org\/title\/)(.*)/)
+		// Regex to check if an Arch Wiki url was pasted, if yes only take the title
+		if (archWikiUrlRegexMarch){
+			//console.log(`Regex matched: ${archWikiUrlRegexMarch[0]}, title is ${archWikiUrlRegexMarch[3]}`)
+			searchTerm=archWikiUrlRegexMarch[3]
+		}
+		
 		//console.log("searchTerm: " + searchTerm)
 		let urlEncodedSearchTerm = encodeURI(searchTerm)
 		//console.log("urlEncodedSearchTerm: "+ urlEncodedSearchTerm)
+		console.log(`url fetched: https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`)
 		fetch(`https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`).then((response) => {
 			if (!response.ok){
-				throw new Error('Failed to fetch the search page: ${response.status}');
+				throw new Error(`Failed to fetch the search page: ${response.status}`);
 			}
-			//console.log(response)
+			
 			return response.json()
 		}).then((data) => {
+			console.log(`raw data: ${data}`)
 			let typedData = data as [string,string[],string[],string[]]
+			console.log(`typedData: ${typedData}`)
 			const searchResult = {} as SearchResult;
 			searchResult.query = typedData[0]
 			searchResult.titles = typedData[1]
 			searchResult.description = typedData[2]
 			searchResult.urls = typedData[3]
-
+			
 			
 			setWikiSearch(searchResult)
 		})
@@ -99,16 +110,19 @@ export default function ArchSeek() {
 	let wikiText = {} as SearchResult;
 
 	wikiText = useSearchWikiPage(query)
-	console.log(wikiText)
-	console.log(wikiText.titles)
+	console.log(`raw wikiText: ${wikiText}`)
+	//console.log(wikiText.titles)
 	if (selectedId != null){
-	selectedTitle = wikiText.titles[Number(selectedId)]
+		// safety check
+		if (Number(selectedId) < wikiText.titles.length) {
+			selectedTitle = wikiText.titles[Number(selectedId)]
+		} 
 	} else {
 		selectedTitle = ""
 	}
 	let wikiPage = useWikiPage(selectedTitle)
 
-	console.log(selectedId)
+	//console.log(selectedId)
 
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
