@@ -1,3 +1,4 @@
+// various import
 import {
 	Action,
 	ActionPanel,
@@ -12,41 +13,43 @@ import {
 	useState
 } from 'react';
 import TurndownService, * as Turndown from "turndown"
-
+// Turndownservice initialisation (to be able to transform html to markdown)
 var turndownService = new TurndownService({codeBlockStyle: `fenced`})
+// custom interface to match Arch Wiki's response
 interface SearchResult {
 	query: string;
 	titles: string[];
 	description: string[];
 	urls: string[];
 }	
-/*export async function getWikiPage() : Promise<string> {
-	//return "Hello World"
-	useEffect(() => {
-		fetch('https://wiki.archlinux.org/title/Main_page').then((response) =>{ return response.text();})
-	}).then((data) => {return data})
-	
-	
-}
-	*/
+
+// Function to get a wiki page from it's title
 function useWikiPage(title:any){
+	// safety url encoding
 	let urlEncodedTitle = encodeURI(title)
+	// React thing to show while waiting for actual results
 	const [wikiText, setWikiText] = useState<string>("Loading content...")
 	useEffect(() => {
+		//safety checks
 		if (title == null) {
 			return
 		}
 		if (title.length == 0 ){
 			return
 		}
+		//actual fetch command, follow both HTTP redirect and Mediawiki page redirects
 		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedTitle}&format=json&prop=text&redirects=1`,{redirect: 'follow'}).then((response) => {
 			if (!response.ok) {
+
 				throw new Error('Failed to fetch the page: ${response.status}');
 			}
+			// return the response's as json
 			return response.json();
 		}).then((data: any) => {
+			//only parse the html in itself
 			setWikiText(data.parse.text["*"])
 		})
+	// this make sure it only runs if the title change
 	},[title])
 	return wikiText
 }
@@ -60,8 +63,6 @@ function useSearchWikiPage(searchTerm: string) {
 
 	useEffect(() => {
 		if (searchTerm.length == 0){
-			//console.log("searchTerm: " + searchTerm)
-			//console.log("wikiSearch : " + String(wikiSearch.titles))
 			setWikiSearch(defaultOuput)
 			return
 		}
@@ -114,25 +115,13 @@ export default function ArchSeek() {
 			{query === "" && wikiText.titles.length === 0 ? (
 				<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
 ) : (
-
-			/*<List.Item title="Open the Arch Wiki" icon="Arch_Linux_logo.svg" actions={
-				<ActionPanel>
-					<Action.CopyToClipboard title="Copy url to clipboard" content="https://wiki.archlinux.org/title/Main_page" />
-					<Action.OpenInBrowser title="Open in browser" url="https://wiki.archlinux.org/title/Main_page"/>
-				</ActionPanel>
-			} detail={
-			<List.Item.Detail markdown={"# The Arch Wiki\n" + wikiText.titles} />
-			} />*/
-
 		 wikiText.titles.map((title, index) =>
-		 //{index === selectedId}(
 			<List.Item id={String(index)} key={title} title={title} icon="Arch_Linux_logo.svg" detail={
 				<List.Item.Detail markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)}/>
 			} actions={
 				<ActionPanel>
-					<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} />
-					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]}/>
-					<Action.OpenInBrowser title="DEV: open raw url in browser" url={`https://wiki.archlinux.org/api.php?action=parse&page=${title}&format=json&prop=text&redirects=1`}/>
+					<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]}/>
+					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="Arch_Linux_logo.svg"/>
 				</ActionPanel>
 			}/>
 		) 
