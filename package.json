@@ -25,7 +25,8 @@
     "lint": "vici lint"
   },
   "dependencies": {
-    "@vicinae/api": "^0.28.1"
+    "@vicinae/api": "^0.28.1",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.2",

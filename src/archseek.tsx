@@ -15,6 +15,15 @@ import {
 import TurndownService, * as Turndown from "turndown"
 // Turndownservice initialisation (to be able to transform html to markdown)
 var turndownService = new TurndownService({codeBlockStyle: `fenced`})
+var tables = require('turndown-plugin-gfm').tables
+
+turndownService.use(tables)
+turndownService.remove(function (node){
+	return node.getAttribute('class') === 'mw-editsection-bracket'
+}).remove(function (node){
+	return node.getAttribute('class') === 'mw-editsection'
+})
+
 // custom interface to match Arch Wiki's response
 interface SearchResult {
 	query: string;
@@ -37,6 +46,7 @@ function useWikiPage(title:any){
 		if (title.length == 0 ){
 			return
 		}
+
 		//actual fetch command, follow both HTTP redirect and Mediawiki page redirects
 		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedTitle}&format=json&prop=text&redirects=1`,{redirect: 'follow'}).then((response) => {
 			if (!response.ok) {
@@ -67,14 +77,19 @@ function useSearchWikiPage(searchTerm: string) {
 			setWikiSearch(defaultOuput)
 			return
 		}
+		const timeout = setTimeout(() =>{
+
+		
 		const archWikiUrlRegexMarch = searchTerm.match(/^(https:\/\/)?(wiki.archlinux.org\/title\/)(.*)/)
 		// Regex to check if an Arch Wiki url was pasted, if yes only take the title
+
 		if (archWikiUrlRegexMarch){
-			//console.log(`Regex matched: ${archWikiUrlRegexMarch[0]}, title is ${archWikiUrlRegexMarch[3]}`)
 			searchTerm=archWikiUrlRegexMarch[3]
 		}
 		
 		let urlEncodedSearchTerm = encodeURI(searchTerm)
+		console.log(`fetching api with title ${urlEncodedSearchTerm}`)
+
 		fetch(`https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`).then((response) => {
 			if (!response.ok){
 				//Let the user know that an error occured
@@ -100,6 +115,8 @@ function useSearchWikiPage(searchTerm: string) {
 			
 			setWikiSearch(searchResult)
 		})
+		},300)
+		return() => clearTimeout(timeout)
 	},[searchTerm])
 	
 	return wikiSearch
