@@ -74,20 +74,23 @@ function useSearchWikiPage(searchTerm: string) {
 			searchTerm=archWikiUrlRegexMarch[3]
 		}
 		
-		//console.log("searchTerm: " + searchTerm)
 		let urlEncodedSearchTerm = encodeURI(searchTerm)
-		//console.log("urlEncodedSearchTerm: "+ urlEncodedSearchTerm)
-		console.log(`url fetched: https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`)
 		fetch(`https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`).then((response) => {
 			if (!response.ok){
+				//Let the user know that an error occured
+				showToast({ title: "Failed to fetch the search results",message: String(response.status),style: Toast.Style.Failure})
 				throw new Error(`Failed to fetch the search page: ${response.status}`);
 			}
 			
 			return response.json()
 		}).then((data) => {
-			console.log(`raw data: ${data}`)
+			//small bandaid so that the code doesn't implode if non-normal query is sent
+			if (!Array.isArray(data)){
+				// let the user know that they inputed a weird thing that broke
+				showToast({title: "Unrecognized output", message: "Perhaps your query was invalid", style: Toast.Style.Failure})
+				return
+			}
 			let typedData = data as [string,string[],string[],string[]]
-			console.log(`typedData: ${typedData}`)
 			const searchResult = {} as SearchResult;
 			searchResult.query = typedData[0]
 			searchResult.titles = typedData[1]
@@ -110,19 +113,16 @@ export default function ArchSeek() {
 	let wikiText = {} as SearchResult;
 
 	wikiText = useSearchWikiPage(query)
-	console.log(`raw wikiText: ${wikiText}`)
-	//console.log(wikiText.titles)
 	if (selectedId != null){
 		// safety check
 		if (Number(selectedId) < wikiText.titles.length) {
 			selectedTitle = wikiText.titles[Number(selectedId)]
 		} 
 	} else {
+		// if selectedId is null, just return an empty selected title
 		selectedTitle = ""
 	}
 	let wikiPage = useWikiPage(selectedTitle)
-
-	//console.log(selectedId)
 
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
