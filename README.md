@@ -1,15 +1,8 @@
-# Vicinae Extension
+# ArchSeek Vicinae Extension
+Welcome to the ArchSeek vicinae exntesion!
 
-Congratulations on generating your new Vicinae extension!
+This is an extension for the [vicinae launcher](https://github.com/vicinaehq/vicinae). It allows you to quickly query the Arch Wiki and read wiki pages directly from Vicinae!
 
-You can install the required dependencies and run your extension in development mode like so:
+If you prefer to read the page in your browser, there's an action for that, too.
 
-```bash
-npm install
-npm run dev
-```
-If you want to build the production bundle, simply run:
-
-```bash
-npm run build
-```
+An Arch/CachyOS/Aur package search ability is also planned

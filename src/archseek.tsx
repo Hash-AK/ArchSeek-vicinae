@@ -2,11 +2,13 @@
 import {
 	Action,
 	ActionPanel,
+	Detail,
 	Icon,
 	List,
 	showToast,
 	Toast,
 	Color,
+	useNavigation
 } from "@vicinae/api";
 import {
 	useEffect,
@@ -23,7 +25,13 @@ turndownService.remove(function (node){
 }).remove(function (node){
 	return node.getAttribute('class') === 'mw-editsection'
 })
-
+/*turndownService.addRule('codeIndent',{
+	filter: ['pre','code'],
+	replacement: function(content){
+		return '```\n' + content + '```\n'
+	}
+})
+*/
 // custom interface to match Arch Wiki's response
 interface SearchResult {
 	query: string;
@@ -58,6 +66,7 @@ function useWikiPage(title:any){
 		}).then((data: any) => {
 			//only parse the html in itself
 			setWikiText(data.parse.text["*"])
+			console.log(data.parse.text["*"])
 		})
 	// this make sure it only runs if the title change
 	},[title])
@@ -115,7 +124,7 @@ function useSearchWikiPage(searchTerm: string) {
 			
 			setWikiSearch(searchResult)
 		})
-		},300)
+		},200)
 		return() => clearTimeout(timeout)
 	},[searchTerm])
 	
@@ -151,8 +160,9 @@ export default function ArchSeek() {
 				<List.Item.Detail markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)}/>
 			} actions={
 				<ActionPanel>
-					<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]}/>
+					<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} icon={Icon.CopyClipboard}/>
 					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="Arch_Linux_logo.svg"/>
+					<Action.Push title="Open in detail" target={<Detail markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)} /> } icon={Icon.AppWindow} />
 				</ActionPanel>
 			}/>
 		) 
