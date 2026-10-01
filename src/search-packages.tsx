@@ -37,7 +37,7 @@ interface PackageDescription{
     conflicts: string[]
     provides: string[]
     replaces: string[]
-    dependes: string[]
+    depends: string[]
     optdepends: string[]
     makedepends: string[]
     checkdepends: string[]
@@ -51,8 +51,11 @@ interface PackageSearchResult {
     count: number
     page: number
 }
+const {exec}= require('child_process')
+
 function useSearchPackage(searchTerm: string, source: string){
-    const defaultOutput = {version: 2,limit: 250,valid: true,num_pages: 1,count: 0,page:1} as PackageSearchResult
+    const defaultPackageDesc = {pkgname: ""} as PackageDescription
+    const defaultOutput = {version: 2,limit: 250,valid: true,num_pages: 1,count: 0,page:1,results: []} as PackageSearchResult
     const [packageSearch, setPackageSearch] = useState<PackageSearchResult>(defaultOutput)
     if(source == "All"){
 
@@ -97,9 +100,20 @@ export default function ArchSeek(){
             {query === "" ?(
                 <List.EmptyView title="No Package Found" description="Try to search something else." icon={{source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}}/>
             ) : (
-            <List.Item title="burp" detail={
-              <List.Item.Detail markdown={String(testText.count)}/>  
-            }/>
+                testText.results.map((title,index) =>
+                <List.Item id={String(index)} title={title.pkgname} key={`${title.pkgname}-${title.repo}-${title.arch}`} icon="Arch_Linux_logo.svg" detail={
+                    <List.Item.Detail markdown={title.pkgdesc}/>
+                } accessories={[
+                    { tag: { value: "Arch Repos", color: Color.Blue}}
+                ]} actions={
+                    <ActionPanel>
+                        <Action.CopyToClipboard title="Copy upsteam url to clipboard" content={title.url} icon={Icon.CopyClipboard}/>
+                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://archlinux.org/packages/${title.repo}/${title.arch}/${title.pkgname}/`} icon={Icon.CopyClipboard}/>
+                        <Action.OpenInBrowser title="Open package in the browser" url={`https://archlinux.org/packages/${title.repo}/${title.arch}/${title.pkgname}/`} icon="Arch_Linux_logo.svg"/>
+                    </ActionPanel>
+                }/>
+                )
+
             )}
         </List>
     );
