@@ -11,9 +11,15 @@
   "icon": "Arch_Linux_logo.svg",
   "commands": [
     {
-      "name": "archseek",
-      "title": "ArchSeek",
-      "description": "Search Arch Linux packages, AUR, and Arch Wiki from Vicinae",
+      "name": "search-wiki",
+      "title": "Search Wiki",
+      "description": "Search the Arch Wiki from Vicinae",
+      "mode": "view"
+    },
+    {
+      "name": "search-packages",
+      "title": "Search Packages",
+      "description": "Search packages from official repsositories and the AUR from Vicinae",
       "mode": "view"
     }
   ],
