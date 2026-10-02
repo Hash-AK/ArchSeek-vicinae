@@ -51,27 +51,61 @@ interface PackageSearchResult {
     count: number
     page: number
 }
-const {exec}= require('child_process')
+interface AURPackageDescription{
+    Description: string
+    FirstSubmitted: EpochTimeStamp
+    ID: number
+    LastModified: EpochTimeStamp
+    Maintainer: string
+    Name: string
+    NumVotes: number
+    OutOfDate: null | EpochTimeStamp
+    PackageBase: string
+    PackageBaseID: number
+    Popularity: number
+    URL: string
+    URLPath: string
+    Version: string
+
+}
+interface AURSearchResult {
+    resultcount: number
+    results: AURPackageDescription[]
+    type: string
+    version: number
+}
+interface SearchState {
+    officialResults: PackageDescription[]
+    AURResults: AURPackageDescription[]
+}
 
 function useSearchPackage(searchTerm: string, source: string){
-    const defaultPackageDesc = {pkgname: ""} as PackageDescription
-    const defaultOutput = {version: 2,limit: 250,valid: true,num_pages: 1,count: 0,page:1,results: []} as PackageSearchResult
-    const [packageSearch, setPackageSearch] = useState<PackageSearchResult>(defaultOutput)
-    if(source == "All"){
-
-    }
-    else if (source == "AUR"){
-
-    }
-    else if (source == "Official"){
-
-    } 
-    useEffect(() => {
+    const defaultOutput = {officialResults: [],AURResults: []} as SearchState
+    const [packageSearch, setPackageSearch] = useState<SearchState>(defaultOutput)
+        useEffect(() => {
         if(searchTerm.length==0){
             setPackageSearch(defaultOutput)
             return
         }
         const timeout = setTimeout(()=>{
+        if(source == "All"){
+
+        }
+        else if (source == "AUR"){
+            let urlEncodedSearchTerm = encodeURI(searchTerm)
+            fetch(`https://aur.archlinux.org/rpc/v5/search/${urlEncodedSearchTerm}`).then((response)=> {
+                if (!response.ok){
+                    showToast({ title: "Failed to fetch the search results",message: String(response.status),style: Toast.Style.Failure})
+                    throw new Error(`Failed to fetch the search page: ${response.status}`)
+                }
+                return response.json()
+            }).then((data)=> {
+                let typedData = data as AURSearchResult
+                console.dir(typedData, {depth: null})
+                setPackageSearch({officialResults:[], AURResults: typedData.results})
+            })
+        }
+        else if (source == "Official"){
             let urlEncodedSearchTerm = encodeURI(searchTerm)
             fetch(`https://archlinux.org/packages/search/json/?q=${urlEncodedSearchTerm}`).then((response)=>{
                 if (!response.ok){
@@ -82,11 +116,15 @@ function useSearchPackage(searchTerm: string, source: string){
             }).then((data) => {
                 let typedData = data as PackageSearchResult
                 console.dir(typedData, {depth: null})
-                setPackageSearch(typedData)
+                setPackageSearch({officialResults: typedData.results,AURResults:[]})
             })
+        } 
+
         },200)
         return() => clearTimeout(timeout)
     },[searchTerm])
+
+
     return packageSearch
 }
 
@@ -94,27 +132,41 @@ export default function ArchSeek(){
     const [query, setQuery] = useState("");
     const [selectedId, setSelectedId] = useState<string | null>(null);
     let selectedPackage
-    let testText = useSearchPackage(query, "All")
+    let testText = useSearchPackage(query, "AUR")
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
             {query === "" ?(
                 <List.EmptyView title="No Package Found" description="Try to search something else." icon={{source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}}/>
             ) : (
-                testText.results.map((title,index) =>
-                <List.Item id={String(index)} title={title.pkgname} key={`${title.pkgname}-${title.repo}-${title.arch}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={title.pkgdesc}/>
+                <>
+                {testText.officialResults.map((officialPackage,index) =>
+                <List.Item id={String(index)} title={officialPackage.pkgname} key={`${officialPackage.pkgname}-${officialPackage.repo}-${officialPackage.arch}`} icon="Arch_Linux_logo.svg" detail={
+                    <List.Item.Detail markdown={`# ${officialPackage.pkgname}\n${officialPackage.pkgdesc}`}/>
                 } accessories={[
                     { tag: { value: "Arch Repos", color: Color.Blue}}
                 ]} actions={
                     <ActionPanel>
-                        <Action.CopyToClipboard title="Copy upsteam url to clipboard" content={title.url} icon={Icon.CopyClipboard}/>
-                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://archlinux.org/packages/${title.repo}/${title.arch}/${title.pkgname}/`} icon={Icon.CopyClipboard}/>
-                        <Action.OpenInBrowser title="Open package in the browser" url={`https://archlinux.org/packages/${title.repo}/${title.arch}/${title.pkgname}/`} icon="Arch_Linux_logo.svg"/>
+                        <Action.CopyToClipboard title="Copy upsteam url to clipboard" content={officialPackage.url} icon={Icon.CopyClipboard}/>
+                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon={Icon.CopyClipboard}/>
+                        <Action.OpenInBrowser title="Open package in the browser" url={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon="Arch_Linux_logo.svg"/>
                     </ActionPanel>
                 }/>
-                )
 
+                )}
+                {testText.AURResults.map((AURPackage,index) => 
+                <List.Item id={String(index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
+                    <List.Item.Detail markdown={`# ${AURPackage.Name}\n${AURPackage.Description}`}/>
+                } accessories={[
+                    { tag: { value: "AUR", color: Color.Green}}
+                ]}/>
+                
             )}
+            
+
+                 </>   
+            )
+            
+            }
         </List>
     );
 }
