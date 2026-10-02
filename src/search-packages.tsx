@@ -164,7 +164,12 @@ export default function ArchSeek(){
                     <List.Item.Detail markdown={`# ${AURPackage.Name}\n${AURPackage.Description}`}/>
                 } accessories={[
                     { tag: { value: "AUR", color: Color.Green}}
-                ]}/>
+                ]} actions={
+                    <ActionPanel>
+                        <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
+                        <Action.CopyToClipboard title="Copy package url tp clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
+                    </ActionPanel>
+                }/>
                 
             )}
             
