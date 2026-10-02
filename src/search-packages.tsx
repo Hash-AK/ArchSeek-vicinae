@@ -78,7 +78,6 @@ interface SearchState {
     officialResults: PackageDescription[]
     AURResults: AURPackageDescription[]
 }
-
 function useSearchPackage(searchTerm: string, source: string){
     const defaultOutput = {officialResults: [],AURResults: []} as SearchState
     const [packageSearch, setPackageSearch] = useState<SearchState>(defaultOutput)
@@ -122,7 +121,7 @@ function useSearchPackage(searchTerm: string, source: string){
 
         },200)
         return() => clearTimeout(timeout)
-    },[searchTerm])
+    },[searchTerm,source])
 
 
     return packageSearch
@@ -130,18 +129,25 @@ function useSearchPackage(searchTerm: string, source: string){
 
 export default function ArchSeek(){
     const [query, setQuery] = useState("");
+    const [sourceDropdown,setSourceDropdown] = useState("All")
     const [selectedId, setSelectedId] = useState<string | null>(null);
     let selectedPackage
-    let testText = useSearchPackage(query, "AUR")
+    let testText = useSearchPackage(query, sourceDropdown)
     return(
-        <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
+        <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
+        <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
+            <List.Dropdown.Item title="All" value="All"/>
+            <List.Dropdown.Item title="AUR" value="AUR"/>
+            <List.Dropdown.Item title="Official repos only" value="Official"/>
+        </List.Dropdown>
+    }>
             {query === "" ?(
                 <List.EmptyView title="No Package Found" description="Try to search something else." icon={{source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}}/>
             ) : (
                 <>
                 {testText.officialResults.map((officialPackage,index) =>
                 <List.Item id={String(index)} title={officialPackage.pkgname} key={`${officialPackage.pkgname}-${officialPackage.repo}-${officialPackage.arch}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${officialPackage.pkgname}\n${officialPackage.pkgdesc}`}/>
+                    <List.Item.Detail markdown={`# ${officialPackage.pkgname}  \n**Architecture:** ${officialPackage.arch}  \n**Repository:** ${officialPackage.repo}  \n**Description:** ${officialPackage.pkgdesc}  \n**Upstream URL:** ${officialPackage.url}  \n**License(s):** ${officialPackage.licenses.toString()}  \n**Maintainers:** ${officialPackage.maintainers}  \n**Package Size:** ${officialPackage.compressed_size}MB  \n**Installed Size:** ${officialPackage.installed_size}MB  \n**Last Packager:** ${officialPackage.packager}  \n**Build Date:** ${officialPackage.build_date}  \n**Signed By:** ${officialPackage}  \n**Last Updated:** ${officialPackage.last_update}`}/>
                 } accessories={[
                     { tag: { value: "Arch Repos", color: Color.Blue}}
                 ]} actions={
