@@ -68,6 +68,37 @@ interface AURPackageDescription{
     Version: string
 
 }
+interface AURPackageMoreInfoResult{ //sob
+resulcount: number
+results: AURPackageDescription[]
+type: string
+version: number
+}
+interface AURPackageMoreInfoDescription{
+    CoMaintainers: string[]
+    Conflicts: string[]
+    Depends: string[]
+    Description: string
+    FirstSubmitted: EpochTimeStamp
+    ID: number
+    Keywords: string[]
+    LastModified: EpochTimeStamp
+    Licenses: string[]
+    Maintainer: string
+    MakeDepends: string[]
+    Name: string
+    NumVotes: number
+    OutOfDate: null | EpochTimeStamp
+    PackageBase: string
+    PackageBaseID: number
+    Popularity: number
+    Provides: string[]
+    Submitter: string
+    URL: string
+    URLPath: string
+    Version: string
+
+}
 interface AURSearchResult {
     resultcount: number
     results: AURPackageDescription[]
@@ -79,7 +110,9 @@ interface SearchState {
     AURResults: AURPackageDescription[]
 }
 const defaultOutput = {officialResults: [],AURResults: []} as SearchState
-
+function getMoreAURInfo(packageName: string){
+    const [info,setInfo] = useState<AURPackageMoreInfoDescription>()
+}
 function useSearchPackage(searchTerm: string, source: string){
     const [packageSearch, setPackageSearch] = useState<SearchState>(defaultOutput)
         useEffect(() => {
@@ -87,7 +120,7 @@ function useSearchPackage(searchTerm: string, source: string){
             setPackageSearch(defaultOutput)
             return
         }
-
+        
         const timeout = setTimeout(async ()=>{
         const toast = await showToast({ title: "Searching...", style: Toast.Style.Animated })
 

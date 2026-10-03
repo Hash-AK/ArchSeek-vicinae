@@ -59,7 +59,7 @@ function useWikiPage(title:any){
 		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedTitle}&format=json&prop=text&redirects=1`,{redirect: 'follow'}).then((response) => {
 			if (!response.ok) {
 
-				throw new Error('Failed to fetch the page: ${response.status}');
+				throw new Error(`Failed to fetch the page: ${response.status}`);
 			}
 			// return the response's as json
 			return response.json();
@@ -86,9 +86,9 @@ function useSearchWikiPage(searchTerm: string) {
 			setWikiSearch(defaultOuput)
 			return
 		}
-		const timeout = setTimeout(() =>{
-
-		
+		const timeout = setTimeout(async () =>{
+		// Toast so that user know to wait
+		const toast = await showToast({ title: "Searching...", style: Toast.Style.Animated })
 		const archWikiUrlRegexMarch = searchTerm.match(/^(https:\/\/)?(wiki.archlinux.org\/title\/)(.*)/)
 		// Regex to check if an Arch Wiki url was pasted, if yes only take the title
 
@@ -102,7 +102,9 @@ function useSearchWikiPage(searchTerm: string) {
 		fetch(`https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`).then((response) => {
 			if (!response.ok){
 				//Let the user know that an error occured
-				showToast({ title: "Failed to fetch the search results",message: String(response.status),style: Toast.Style.Failure})
+				toast.title = "Failed to fetch the search results"
+				toast.message = String(response.status)
+				toast.style = Toast.Style.Failure
 				throw new Error(`Failed to fetch the search page: ${response.status}`);
 			}
 			
@@ -111,7 +113,9 @@ function useSearchWikiPage(searchTerm: string) {
 			//small bandaid so that the code doesn't implode if non-normal query is sent
 			if (!Array.isArray(data)){
 				// let the user know that they inputed a weird thing that broke
-				showToast({title: "Unrecognized output", message: "Perhaps your query was invalid", style: Toast.Style.Failure})
+				toast.title = "Unrecognized output"
+				toast.message = "Perhaps your query was invalid"
+				toast.style = Toast.Style.Failure
 				return
 			}
 			let typedData = data as [string,string[],string[],string[]]
@@ -120,9 +124,9 @@ function useSearchWikiPage(searchTerm: string) {
 			searchResult.titles = typedData[1]
 			searchResult.description = typedData[2]
 			searchResult.urls = typedData[3]
-			
-			
 			setWikiSearch(searchResult)
+			toast.style = Toast.Style.Success;
+            toast.title = "Search complete";
 		})
 		},200)
 		return() => clearTimeout(timeout)
