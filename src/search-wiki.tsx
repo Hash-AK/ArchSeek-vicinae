@@ -54,11 +54,15 @@ function useWikiPage(title:any){
 		if (title.length == 0 ){
 			return
 		}
-
+		(async() =>{
+		// Toastytoast
+		const toast = await showToast({ title: "Fetching...", style: Toast.Style.Animated })
 		//actual fetch command, follow both HTTP redirect and Mediawiki page redirects
 		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedTitle}&format=json&prop=text&redirects=1`,{redirect: 'follow'}).then((response) => {
 			if (!response.ok) {
-
+				toast.title = "Failed to fetch wiki's page"
+				toast.message = String(response.status)
+				toast.style = Toast.Style.Failure
 				throw new Error(`Failed to fetch the page: ${response.status}`);
 			}
 			// return the response's as json
@@ -66,8 +70,10 @@ function useWikiPage(title:any){
 		}).then((data: any) => {
 			//only parse the html in itself
 			setWikiText(data.parse.text["*"])
-			console.log(data.parse.text["*"])
+			toast.title = "Page fetched!"
+			toast.style = Toast.Style.Success
 		})
+		})()
 	// this make sure it only runs if the title change
 	},[title])
 	return wikiText
@@ -97,8 +103,6 @@ function useSearchWikiPage(searchTerm: string) {
 		}
 		
 		let urlEncodedSearchTerm = encodeURI(searchTerm)
-		console.log(`fetching api with title ${urlEncodedSearchTerm}`)
-
 		fetch(`https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`).then((response) => {
 			if (!response.ok){
 				//Let the user know that an error occured

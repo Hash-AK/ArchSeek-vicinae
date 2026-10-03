@@ -69,8 +69,8 @@ interface AURPackageDescription{
 
 }
 interface AURPackageMoreInfoResult{ //sob
-resulcount: number
-results: AURPackageDescription[]
+resultcount: number
+results: AURPackageMoreInfoDescription[]
 type: string
 version: number
 }
@@ -83,7 +83,7 @@ interface AURPackageMoreInfoDescription{
     ID: number
     Keywords: string[]
     LastModified: EpochTimeStamp
-    Licenses: string[]
+    License: string[]
     Maintainer: string
     MakeDepends: string[]
     Name: string
@@ -109,9 +109,40 @@ interface SearchState {
     officialResults: PackageDescription[]
     AURResults: AURPackageDescription[]
 }
+const defaultAurMoreInfoDescription = {CoMaintainers: [""],Conflicts: [""],Depends:[""],Description: "",FirstSubmitted:0,ID:0,Keywords:[""],LastModified:0,License:[""],Maintainer:"",MakeDepends:[""],Name:"",NumVotes:0,OutOfDate:null,PackageBase:"",PackageBaseID:0,Popularity:0,Provides:[""],Submitter:"",URL:"",URLPath:"",Version:""} as AURPackageMoreInfoDescription
 const defaultOutput = {officialResults: [],AURResults: []} as SearchState
-function getMoreAURInfo(packageName: string){
-    const [info,setInfo] = useState<AURPackageMoreInfoDescription>()
+function useGetMoreAURInfo(packageName: string|null){
+    const [info,setInfo] = useState<AURPackageMoreInfoDescription>(defaultAurMoreInfoDescription)
+    useEffect(() => {
+    if (packageName == null){
+        return
+    }
+    if (packageName.length == 0){
+        return
+    }
+
+    (async() =>{
+    const toast = await showToast({ title: "Fetching package info...", style: Toast.Style.Animated})
+    let urlEncodedName = encodeURI(packageName)
+    fetch(`https://aur.archlinux.org/rpc/v5/info?arg[]=${urlEncodedName}`).then((response) =>{
+        if(!response.ok){
+            toast.title = "Failed to fetch package info"
+            toast.message = String(response.status)
+            toast.style = Toast.Style.Failure
+            throw new Error(`Failed to fetch the page: ${response.status}`)
+        }
+        return response.json()
+    }).then((data) =>{
+        let typedData = data as AURPackageMoreInfoResult
+        let results = typedData.results[0] as AURPackageMoreInfoDescription
+        setInfo(results)
+        console.log(typeof results.License, results.License);
+        toast.style = Toast.Style.Success
+        toast.title = "Package info fetched!"
+    })
+    })()
+    },[packageName])
+    return info
 }
 function useSearchPackage(searchTerm: string, source: string){
     const [packageSearch, setPackageSearch] = useState<SearchState>(defaultOutput)
@@ -120,7 +151,7 @@ function useSearchPackage(searchTerm: string, source: string){
             setPackageSearch(defaultOutput)
             return
         }
-        
+
         const timeout = setTimeout(async ()=>{
         const toast = await showToast({ title: "Searching...", style: Toast.Style.Animated })
 
@@ -177,8 +208,22 @@ export default function ArchSeek(){
     const [query, setQuery] = useState("");
     const [sourceDropdown,setSourceDropdown] = useState("All")
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    let selectedPackage
+    let selectedPackage: string| null = null
+    let AURPackageInfo: AURPackageMoreInfoDescription = defaultAurMoreInfoDescription
+
     let testText = useSearchPackage(query, sourceDropdown)
+    if (selectedId != null){
+        if (Number(selectedId) < testText.AURResults.length && sourceDropdown == "AUR" || Number(selectedId) < testText.officialResults.length && sourceDropdown == "Official"){
+            if(sourceDropdown == "AUR"){
+                selectedPackage = testText.AURResults[Number(selectedId)].Name
+            } else if (sourceDropdown == "Official"){
+                selectedPackage = testText.officialResults[Number(selectedId)].pkgname
+            }
+        } 
+    } else {
+        selectedPackage = ""
+    }
+    AURPackageInfo = useGetMoreAURInfo(selectedPackage)
 
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
@@ -208,7 +253,7 @@ export default function ArchSeek(){
                 )}
                 {testText.AURResults.map((AURPackage,index) => 
                 <List.Item id={String(index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n**Keywords:** EMPTY FOR NOW  \n**Licenses:** EMPTY FOR NOW  \n**Conflicts:** EMPTY FOR NOW  \n**Provides:** EMPTY FOR NOW  \n**Submitter:** SOME STUFF  \n**Maintaineer:** ${AURPackage.Maintainer}  \n**Last Packager:** EMPTY FOR NOW  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${AURPackage.FirstSubmitted}  \n**Last Updated:** ${AURPackage.LastModified}`}/>
+                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo.Keywords) && (AURPackageInfo.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo.License) && (AURPackageInfo.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo.Conflicts?.length) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo.Provides)&& (AURPackageInfo.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? `(${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Last Packager:** Some stuff  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${AURPackage.FirstSubmitted}  \n**Last Updated:** ${AURPackage.LastModified}`}/>
                 } accessories={[
                     { tag: { value: "AUR", color: Color.Green}}
                 ]} actions={
