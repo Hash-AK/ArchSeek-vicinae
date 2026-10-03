@@ -158,13 +158,13 @@ function useSearchPackage(searchTerm: string, source: string){
 
         const timeout = setTimeout(async ()=>{
         const toast = await showToast({ title: "Searching...", style: Toast.Style.Animated })
-
+         /*   
         if(source == "All"){
             toast.hide()
             return
         }
-
-        else if (source == "AUR"){
+        */
+        if (source == "AUR"){
             let urlEncodedSearchTerm = encodeURI(searchTerm)
             fetch(`https://aur.archlinux.org/rpc/v5/search/${urlEncodedSearchTerm}`).then((response)=> {
                 if (!response.ok){
@@ -241,6 +241,7 @@ function ReadPKGBUILD(PKGBUILD:string|null){
 }
 // formatBytes taken from https://stackoverflow.com/questions/15900485/correct-way-to-convert-size-in-bytes-to-kb-mb-gb-in-javascript
 function formatBytes(bytes: number){
+    if (!bytes)return "0 Bytes"
     const k = 1024
     const dm = 2
     const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
@@ -249,7 +250,7 @@ function formatBytes(bytes: number){
 }
 export default function ArchSeek(){
     const [query, setQuery] = useState("");
-    const [sourceDropdown,setSourceDropdown] = useState("All")
+    const [sourceDropdown,setSourceDropdown] = useState("Official")
     const [selectedId, setSelectedId] = useState<string | null>(null);
     let selectedPackage: string| null = null
     let selectedPKGBase: string | null = null
@@ -274,7 +275,6 @@ export default function ArchSeek(){
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
-            <List.Dropdown.Item title="All" value="All"/>
             <List.Dropdown.Item title="AUR" value="AUR"/>
             <List.Dropdown.Item title="Official repos only" value="Official"/>
         </List.Dropdown>
