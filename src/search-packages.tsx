@@ -225,7 +225,6 @@ function useFetchPKGBUILD(packageName:string|null){
             }
             return response.text()
         }).then((data) =>{
-            console.log(data)
             setPkgText(data)
         })
     },[packageName])
@@ -239,6 +238,13 @@ function ReadPKGBUILD(PKGBUILD:string|null){
             </ActionPanel>
         }/>
     )
+}
+function formatBytes(bytes: number){
+    const k = 1024
+    const dm = 2
+    const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 export default function ArchSeek(){
     const [query, setQuery] = useState("");
@@ -278,7 +284,7 @@ export default function ArchSeek(){
                 <>
                 {testText.officialResults.map((officialPackage,index) =>
                 <List.Item id={String(index)} title={officialPackage.pkgname} key={`${officialPackage.pkgname}-${officialPackage.repo}-${officialPackage.arch}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${officialPackage.pkgname}  \n**Architecture:** ${officialPackage.arch}  \n**Repository:** ${officialPackage.repo}  \n**Description:** ${officialPackage.pkgdesc}  \n**Upstream URL:** ${officialPackage.url}  \n**License(s):** ${Array.isArray(officialPackage.licenses) && (officialPackage.licenses?.length) > 0 ? `${officialPackage.licenses.toString()}  \n` : ""}**Maintainers:** ${officialPackage.maintainers}  \n**Package Size:** ${officialPackage.compressed_size}MB  \n**Installed Size:** ${officialPackage.installed_size}MB  \n**Last Packager:** ${officialPackage.packager}  \n**Build Date:** ${officialPackage.build_date}  \n**Last Updated:** ${officialPackage.last_update}`}/>
+                    <List.Item.Detail markdown={`# ${officialPackage.pkgname}  \n**Architecture:** ${officialPackage.arch}  \n**Repository:** ${officialPackage.repo}  \n**Description:** ${officialPackage.pkgdesc}  \n**Upstream URL:** ${officialPackage.url}  \n**License(s):** ${Array.isArray(officialPackage.licenses) && (officialPackage.licenses?.length) > 0 ? `${officialPackage.licenses.toString()}  \n` : ""}**Maintainers:** ${officialPackage.maintainers}  \n**Package Size:** ${formatBytes(officialPackage.compressed_size)}  \n**Installed Size:** ${formatBytes(officialPackage.installed_size)}  \n**Last Packager:** ${officialPackage.packager}  \n**Build Date:** ${officialPackage.build_date}  \n**Last Updated:** ${officialPackage.last_update}  \n${typeof officialPackage.flag_date === 'string' && officialPackage.flag_date?.length > 0 ? `**_Flagged out of date on:_** ${officialPackage.flag_date}`:""}`}/>
                 } accessories={[
                     { tag: { value: "Arch Repos", color: Color.Blue}}
                 ]} actions={
