@@ -8,12 +8,16 @@ import {
 	showToast,
 	Toast,
 	Color,
+    getPreferenceValues,
 	useNavigation
 } from "@vicinae/api";
 import {
 	useEffect,
 	useState
 } from 'react';
+interface Preferences {
+    "aur-helper": string;
+}
 interface PackageDescription{
     pkgname: string
     pkgbase: string
@@ -111,6 +115,7 @@ interface SearchState {
 }
 const defaultAurMoreInfoDescription = {CoMaintainers: [""],Conflicts: [""],Depends:[""],Description: "",FirstSubmitted:0,ID:0,Keywords:[""],LastModified:0,License:[""],Maintainer:"",MakeDepends:[""],Name:"",NumVotes:0,OutOfDate:null,PackageBase:"",PackageBaseID:0,Popularity:0,Provides:[""],Submitter:"",URL:"",URLPath:"",Version:""} as AURPackageMoreInfoDescription
 const defaultOutput = {officialResults: [],AURResults: []} as SearchState
+const prefs = getPreferenceValues<Preferences>();
 function useGetMoreAURInfo(packageName: string|null){
     const [info,setInfo] = useState<AURPackageMoreInfoDescription>(defaultAurMoreInfoDescription)
     useEffect(() => {
@@ -297,7 +302,7 @@ export default function ArchSeek(){
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
                         <Action.Push title="Open PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
-                        <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;yay -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
+                        <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                     </ActionPanel>
                 }/>
                 

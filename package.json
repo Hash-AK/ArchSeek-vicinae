@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/vicinaehq/vicinae/refs/heads/main/extra/schemas/extension.json",
   "name": "archseek",
   "title": "ArchSeek",
-  "description": "Vicinae launcher extension to search the Arch Wiki/Packages/Aur",
+  "description": "Vicinae launcher extension to search the Arch Wiki/Packages/AUR",
   "categories": [],
   "license": "MIT",
   "author": "Hash-AK",
@@ -23,7 +23,16 @@
       "mode": "view"
     }
   ],
-  "preferences": [],
+  "preferences": [
+    {
+      "name": "aur-helper",
+      "title": "AUR Helper",
+      "description": "Path to the AUR helper that will be used to install AUR packages",
+      "type": "textfield",
+      "default": "/usr/bin/yay",
+      "required": true
+    }
+  ],
   "scripts": {
     "build": "vici build",
     "dev": "vici develop",
