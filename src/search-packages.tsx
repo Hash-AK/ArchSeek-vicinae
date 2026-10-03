@@ -287,7 +287,9 @@ export default function ArchSeek(){
                 <List.Item id={String(index)} title={officialPackage.pkgname} key={`${officialPackage.pkgname}-${officialPackage.repo}-${officialPackage.arch}`} icon="Arch_Linux_logo.svg" detail={
                     <List.Item.Detail markdown={`# ${officialPackage.pkgname}  \n**Architecture:** ${officialPackage.arch}  \n**Repository:** ${officialPackage.repo}  \n**Description:** ${officialPackage.pkgdesc}  \n**Upstream URL:** ${officialPackage.url}  \n**License(s):** ${Array.isArray(officialPackage.licenses) && (officialPackage.licenses?.length) > 0 ? `${officialPackage.licenses.toString()}  \n` : ""}**Maintainers:** ${officialPackage.maintainers}  \n**Package Size:** ${formatBytes(officialPackage.compressed_size)}  \n**Installed Size:** ${formatBytes(officialPackage.installed_size)}  \n**Last Packager:** ${officialPackage.packager}  \n**Build Date:** ${new Date(officialPackage.build_date).toLocaleString()}  \n**Last Updated:** ${new Date(officialPackage.last_update).toLocaleString()}  \n${typeof officialPackage.flag_date === 'string' && officialPackage.flag_date?.length > 0 ? `**_Flagged out of date on:_** ${new Date(officialPackage.flag_date).toLocaleString()}`:""}`}/>
                 } accessories={[
-                    { tag: { value: "Arch Repos", color: Color.Blue}}
+                    { tag: {value: `${officialPackage.repo}`,color: Color.Yellow}},
+
+                    { tag: {value: "Arch Repos",color: Color.SecondaryText}}
                 ]} actions={
                     <ActionPanel>
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;sudo pacman -S --needed ${officialPackage.pkgname}`]} options={{hold:true}}/>
