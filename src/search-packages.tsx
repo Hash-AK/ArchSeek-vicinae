@@ -136,7 +136,6 @@ function useGetMoreAURInfo(packageName: string|null){
         let typedData = data as AURPackageMoreInfoResult
         let results = typedData.results[0] as AURPackageMoreInfoDescription
         setInfo(results)
-        console.log(typeof results.License, results.License);
         toast.style = Toast.Style.Success
         toast.title = "Package info fetched!"
     })
@@ -203,19 +202,54 @@ function useSearchPackage(searchTerm: string, source: string){
 
     return packageSearch
 }
+function useFetchPKGBUILD(packageName:string|null){
+    const [pkgText, setPkgText] = useState<string>("")
 
+
+    useEffect(()=>{
+    if (packageName == null){
+        return
+    }
+    if (packageName.length == 0){
+        return
+    }
+        const encodedPackageName = encodeURI(packageName)
+        fetch(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodedPackageName}`).then((response) =>{
+            if (!response.ok){
+                throw new Error(`Failed to fetch PKGBUILD:: ${response.status}`)
+            }
+            return response.text()
+        }).then((data) =>{
+            console.log(data)
+            setPkgText(data)
+        })
+    },[packageName])
+    return pkgText
+}
+function ReadPKGBUILD(PKGBUILD:string|null){
+
+    return(
+        <Detail markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}\`\`\`\``} actions={
+            <ActionPanel>
+            </ActionPanel>
+        }/>
+    )
+}
 export default function ArchSeek(){
     const [query, setQuery] = useState("");
     const [sourceDropdown,setSourceDropdown] = useState("All")
     const [selectedId, setSelectedId] = useState<string | null>(null);
     let selectedPackage: string| null = null
+    let selectedPKGBase: string | null = null
     let AURPackageInfo: AURPackageMoreInfoDescription = defaultAurMoreInfoDescription
+    let PKGBUILD : string|null = null
 
     let testText = useSearchPackage(query, sourceDropdown)
     if (selectedId != null){
         if (Number(selectedId) < testText.AURResults.length && sourceDropdown == "AUR" || Number(selectedId) < testText.officialResults.length && sourceDropdown == "Official"){
             if(sourceDropdown == "AUR"){
                 selectedPackage = testText.AURResults[Number(selectedId)].Name
+                selectedPKGBase = testText.AURResults[Number(selectedId)].PackageBase
             } else if (sourceDropdown == "Official"){
                 selectedPackage = testText.officialResults[Number(selectedId)].pkgname
             }
@@ -224,7 +258,7 @@ export default function ArchSeek(){
         selectedPackage = ""
     }
     AURPackageInfo = useGetMoreAURInfo(selectedPackage)
-
+    PKGBUILD = useFetchPKGBUILD(selectedPKGBase)
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
@@ -239,7 +273,7 @@ export default function ArchSeek(){
                 <>
                 {testText.officialResults.map((officialPackage,index) =>
                 <List.Item id={String(index)} title={officialPackage.pkgname} key={`${officialPackage.pkgname}-${officialPackage.repo}-${officialPackage.arch}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${officialPackage.pkgname}  \n**Architecture:** ${officialPackage.arch}  \n**Repository:** ${officialPackage.repo}  \n**Description:** ${officialPackage.pkgdesc}  \n**Upstream URL:** ${officialPackage.url}  \n**License(s):** ${officialPackage.licenses.toString()}  \n**Maintainers:** ${officialPackage.maintainers}  \n**Package Size:** ${officialPackage.compressed_size}MB  \n**Installed Size:** ${officialPackage.installed_size}MB  \n**Last Packager:** ${officialPackage.packager}  \n**Build Date:** ${officialPackage.build_date}  \n**Signed By:** ${officialPackage}  \n**Last Updated:** ${officialPackage.last_update}`}/>
+                    <List.Item.Detail markdown={`# ${officialPackage.pkgname}  \n**Architecture:** ${officialPackage.arch}  \n**Repository:** ${officialPackage.repo}  \n**Description:** ${officialPackage.pkgdesc}  \n**Upstream URL:** ${officialPackage.url}  \n**License(s):** ${Array.isArray(officialPackage.licenses) && (officialPackage.licenses?.length) > 0 ? `${officialPackage.licenses.toString()}  \n` : ""}**Maintainers:** ${officialPackage.maintainers}  \n**Package Size:** ${officialPackage.compressed_size}MB  \n**Installed Size:** ${officialPackage.installed_size}MB  \n**Last Packager:** ${officialPackage.packager}  \n**Build Date:** ${officialPackage.build_date}  \n**Signed By:** ${officialPackage}  \n**Last Updated:** ${officialPackage.last_update}`}/>
                 } accessories={[
                     { tag: { value: "Arch Repos", color: Color.Blue}}
                 ]} actions={
@@ -247,13 +281,14 @@ export default function ArchSeek(){
                         <Action.CopyToClipboard title="Copy upsteam url to clipboard" content={officialPackage.url} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon={Icon.CopyClipboard}/>
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon="Arch_Linux_logo.svg"/>
+                        <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;sudo pacman -S --needed ${officialPackage.pkgname}`]} options={{hold:true}}/>
                     </ActionPanel>
                 }/>
 
                 )}
                 {testText.AURResults.map((AURPackage,index) => 
                 <List.Item id={String(index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo.Keywords) && (AURPackageInfo.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo.License) && (AURPackageInfo.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo.Conflicts?.length) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo.Provides)&& (AURPackageInfo.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? `(${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${AURPackage.FirstSubmitted}  \n**Last Updated:** ${AURPackage.LastModified}`}/>
+                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts?.length) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo.Provides)&& (AURPackageInfo.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? `(${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${AURPackage.FirstSubmitted}  \n**Last Updated:** ${AURPackage.LastModified}`}/>
                 } accessories={[
                     { tag: { value: "AUR", color: Color.Green}}
                 ]} actions={
@@ -261,6 +296,8 @@ export default function ArchSeek(){
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
+                        <Action.Push title="Open PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
+                        <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;yay -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                     </ActionPanel>
                 }/>
                 
