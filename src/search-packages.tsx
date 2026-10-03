@@ -78,49 +78,62 @@ interface SearchState {
     officialResults: PackageDescription[]
     AURResults: AURPackageDescription[]
 }
+const defaultOutput = {officialResults: [],AURResults: []} as SearchState
+
 function useSearchPackage(searchTerm: string, source: string){
-    const defaultOutput = {officialResults: [],AURResults: []} as SearchState
     const [packageSearch, setPackageSearch] = useState<SearchState>(defaultOutput)
         useEffect(() => {
         if(searchTerm.length==0){
             setPackageSearch(defaultOutput)
             return
         }
-        const timeout = setTimeout(()=>{
-        if(source == "All"){
 
+        const timeout = setTimeout(async ()=>{
+        const toast = await showToast({ title: "Searching...", style: Toast.Style.Animated })
+
+        if(source == "All"){
+            toast.hide()
+            return
         }
+
         else if (source == "AUR"){
             let urlEncodedSearchTerm = encodeURI(searchTerm)
             fetch(`https://aur.archlinux.org/rpc/v5/search/${urlEncodedSearchTerm}`).then((response)=> {
                 if (!response.ok){
-                    showToast({ title: "Failed to fetch the search results",message: String(response.status),style: Toast.Style.Failure})
+                    toast.title = "Failed to fetch the search results"
+                    toast.message = String(response.status)
+                    toast.style = Toast.Style.Failure
                     throw new Error(`Failed to fetch the search page: ${response.status}`)
                 }
                 return response.json()
             }).then((data)=> {
                 let typedData = data as AURSearchResult
-                console.dir(typedData, {depth: null})
                 setPackageSearch({officialResults:[], AURResults: typedData.results})
+                toast.style = Toast.Style.Success;
+                toast.title = "Search complete";
             })
         }
         else if (source == "Official"){
             let urlEncodedSearchTerm = encodeURI(searchTerm)
             fetch(`https://archlinux.org/packages/search/json/?q=${urlEncodedSearchTerm}`).then((response)=>{
                 if (!response.ok){
-                    showToast({ title: "Failed to fetch the search results",message: String(response.status),style: Toast.Style.Failure})
+                    toast.title = "Failed to fetch the search results"
+                    toast.message = String(response.status)
+                    toast.style = Toast.Style.Failure
                     throw new Error(`Failed to fetch the search page: ${response.status}`)
                 }
                 return response.json()
             }).then((data) => {
                 let typedData = data as PackageSearchResult
-                console.dir(typedData, {depth: null})
                 setPackageSearch({officialResults: typedData.results,AURResults:[]})
+                toast.style = Toast.Style.Success;
+                toast.title = "Search complete";
             })
         } 
 
         },200)
         return() => clearTimeout(timeout)
+
     },[searchTerm,source])
 
 
@@ -133,6 +146,7 @@ export default function ArchSeek(){
     const [selectedId, setSelectedId] = useState<string | null>(null);
     let selectedPackage
     let testText = useSearchPackage(query, sourceDropdown)
+
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
@@ -161,13 +175,14 @@ export default function ArchSeek(){
                 )}
                 {testText.AURResults.map((AURPackage,index) => 
                 <List.Item id={String(index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${AURPackage.Name}\n${AURPackage.Description}`}/>
+                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n**Keywords:** EMPTY FOR NOW  \n**Licenses:** EMPTY FOR NOW  \n**Conflicts:** EMPTY FOR NOW  \n**Provides:** EMPTY FOR NOW  \n**Submitter:** SOME STUFF  \n**Maintaineer:** ${AURPackage.Maintainer}  \n**Last Packager:** EMPTY FOR NOW  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${AURPackage.FirstSubmitted}  \n**Last Updated:** ${AURPackage.LastModified}`}/>
                 } accessories={[
                     { tag: { value: "AUR", color: Color.Green}}
                 ]} actions={
                     <ActionPanel>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
-                        <Action.CopyToClipboard title="Copy package url tp clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
+                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
+                        <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
                     </ActionPanel>
                 }/>
                 
