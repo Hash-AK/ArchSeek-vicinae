@@ -199,7 +199,7 @@ function useSearchPackage(searchTerm: string, source: string){
             })
         } 
 
-        },200)
+        },400)
         return() => clearTimeout(timeout)
 
     },[searchTerm,source])
@@ -254,6 +254,7 @@ export default function ArchSeek(){
     const [selectedId, setSelectedId] = useState<string | null>(null);
     let selectedPackage: string| null = null
     let selectedPKGBase: string | null = null
+    let selectedAUR: string| null =null
     let AURPackageInfo: AURPackageMoreInfoDescription = defaultAurMoreInfoDescription
     let PKGBUILD : string|null = null
 
@@ -263,6 +264,7 @@ export default function ArchSeek(){
             if(sourceDropdown == "AUR"){
                 selectedPackage = testText.AURResults[Number(selectedId)].Name
                 selectedPKGBase = testText.AURResults[Number(selectedId)].PackageBase
+                selectedAUR = selectedPackage
             } else if (sourceDropdown == "Official"){
                 selectedPackage = testText.officialResults[Number(selectedId)].pkgname
             }
@@ -270,7 +272,7 @@ export default function ArchSeek(){
     } else {
         selectedPackage = ""
     }
-    AURPackageInfo = useGetMoreAURInfo(selectedPackage)
+    AURPackageInfo = useGetMoreAURInfo(selectedAUR)
     PKGBUILD = useFetchPKGBUILD(selectedPKGBase)
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
@@ -302,7 +304,7 @@ export default function ArchSeek(){
                 )}
                 {testText.AURResults.map((AURPackage,index) => 
                 <List.Item id={String(index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts?.length) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo.Provides)&& (AURPackageInfo.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? ` (${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${new Date(AURPackage.FirstSubmitted * 1000).toLocaleString()}  \n**Last Updated:** ${new Date(AURPackage.LastModified * 1000).toLocaleString()}`}/>
+                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts?.length) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Provides)&& (AURPackageInfo?.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo?.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? ` (${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${new Date(AURPackage.FirstSubmitted * 1000).toLocaleString()}  \n**Last Updated:** ${new Date(AURPackage.LastModified * 1000).toLocaleString()}`}/>
                 } accessories={[
                     { tag: { value: "AUR", color: Color.Green}}
                 ]} actions={

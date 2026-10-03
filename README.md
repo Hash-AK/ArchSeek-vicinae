@@ -30,3 +30,6 @@ npm run dev
 You can even kill the process afterward   
 
 5) Now in Vicinae you should see "ArchSeek"!
+
+## AI Disclosure
+Durign this project, I sometimes used AI to debug/help me find solutions for bugs that where occuring.
