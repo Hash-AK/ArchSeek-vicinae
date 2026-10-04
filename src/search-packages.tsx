@@ -244,7 +244,7 @@ function useFetchPKGBUILD(packageName:string|null){
         const encodedPackageName = encodeURI(packageName)
         fetch(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodedPackageName}`,{signal:controller.signal}).then((response) =>{
             if (!response.ok){
-                throw new Error(`Failed to fetch PKGBUILD:: ${response.status}`)
+                throw new Error(`Failed to fetch PKGBUILD: ${response.status}`)
             }
             return response.text()
         }).then((data) =>{
@@ -259,6 +259,38 @@ function useFetchPKGBUILD(packageName:string|null){
         }
     },[packageName])
     return pkgText
+}
+function useFetchPKGBUILDCommits(packageName:string|null){
+    const [commits,setCommits] = useState<string>("")
+    useEffect(() =>{
+        const controller = new AbortController()
+        if (packageName == null){
+            return () => controller.abort()
+            
+        }
+        if (packageName.length == 0){
+            return () => controller.abort()
+        }
+        const encodedPackageName = encodeURI(packageName)
+        fetch(`https://aur.archlinux.org/cgit/aur.git/atom/?h=${encodedPackageName}`,{signal:controller.signal}).then((response)=>{
+            if (!response.ok){
+                throw new Error(`Failed to fetch commits: ${response.status}`)
+            }
+            return response.text()
+        }).then((data)=>{
+            console.log(data)
+            setCommits(data)
+        }).catch((error)=>{
+            if(controller.signal.aborted){
+                return
+            }
+        })
+        return () =>{
+            controller.abort()
+        }
+    },[packageName])
+    return commits
+    
 }
 function ReadPKGBUILD(PKGBUILD:string|null){
 
@@ -292,6 +324,7 @@ export default function ArchSeek(){
     let selectedAUR: string| null =null
     let AURPackageInfo: AURPackageMoreInfoDescription = defaultAurMoreInfoDescription
     let PKGBUILD : string|null = null
+    let PKGBUILDCommits: string|null = null
 
     let testText = useSearchPackage(query, sourceDropdown)
     if (selectedId != null){
@@ -309,6 +342,7 @@ export default function ArchSeek(){
     }
     AURPackageInfo = useGetMoreAURInfo(selectedAUR)
     PKGBUILD = useFetchPKGBUILD(selectedPKGBase)
+    PKGBUILDCommits = useFetchPKGBUILDCommits(selectedPKGBase)
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
@@ -346,7 +380,8 @@ export default function ArchSeek(){
                     <ActionPanel>
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
-                        <Action.Push title="Open PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
+                        <Action.Push title="View PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
+                        <Action.Push title="View PKGBUILD changes" target={ReadPKGBUILD(PKGBUILDCommits)} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
                     </ActionPanel>
