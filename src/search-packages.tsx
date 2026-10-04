@@ -282,6 +282,11 @@ export default function ArchSeek(){
     const [query, setQuery] = useState("");
     const [sourceDropdown,setSourceDropdown] = useState("Official")
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    // Make sure to reset ID if results changes
+    useEffect(() =>{
+        setSelectedId(null)
+    },[query,sourceDropdown])
+
     let selectedPackage: string| null = null
     let selectedPKGBase: string | null = null
     let selectedAUR: string| null =null
