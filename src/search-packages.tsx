@@ -11,6 +11,7 @@ import {
     getPreferenceValues,
 	useNavigation
 } from "@vicinae/api";
+import TurndownService, * as Turndown from "turndown"
 import {
 	useEffect,
 	useState
@@ -123,6 +124,29 @@ interface AURCommits{
 const defaultAurMoreInfoDescription = {CoMaintainers: [""],Conflicts: [""],Depends:[""],Description: "",FirstSubmitted:0,ID:0,Keywords:[""],LastModified:0,License:[""],Maintainer:"",MakeDepends:[""],Name:"",NumVotes:0,OutOfDate:null,PackageBase:"",PackageBaseID:0,Popularity:0,Provides:[""],Submitter:"",URL:"",URLPath:"",Version:""} as AURPackageMoreInfoDescription
 const defaultOutput = {officialResults: [],AURResults: []} as SearchState
 const prefs = getPreferenceValues<Preferences>();
+// Turndownservice initialisation (to be able to transform html to markdown)
+var turndownService = new TurndownService({codeBlockStyle: `fenced`})
+turndownService.addRule('del',{
+    filter: function (node){
+        return(
+            node.className === 'del'
+        )
+    },
+    replacement: function (content){
+        return '<span style="color:red">' + content + '</span>  \n'
+    }
+})
+ 
+turndownService.addRule('add',{
+    filter: function (node){
+        return(
+            node.className === 'add'
+        )
+    },
+    replacement: function(content){
+        return '<span style="color:green">' + content + '</span>'
+    }
+})
 function useGetMoreAURInfo(packageName: string|null){
     const [info,setInfo] = useState<AURPackageMoreInfoDescription>(defaultAurMoreInfoDescription)
     useEffect(() => {
@@ -136,7 +160,7 @@ function useGetMoreAURInfo(packageName: string|null){
 
     (async() =>{
     const toast = await showToast({ title: "Fetching package info...", style: Toast.Style.Animated})
-    let urlEncodedName = encodeURI(packageName)
+    let urlEncodedName = encodeURIComponent(packageName)
     fetch(`https://aur.archlinux.org/rpc/v5/info?arg[]=${urlEncodedName}`,{signal: controller.signal}).then((response) =>{
         if(!response.ok){
             toast.title = "Failed to fetch package info"
@@ -181,7 +205,7 @@ function useSearchPackage(searchTerm: string, source: string){
         }
         */
         if (source == "AUR"){
-            let urlEncodedSearchTerm = encodeURI(searchTerm)
+            let urlEncodedSearchTerm = encodeURIComponent(searchTerm)
             fetch(`https://aur.archlinux.org/rpc/v5/search/${urlEncodedSearchTerm}`, {signal: controller.signal}).then((response)=> {
                 if (!response.ok){
                     toast.title = "Failed to fetch the search results"
@@ -206,7 +230,7 @@ function useSearchPackage(searchTerm: string, source: string){
             })
         }
         else if (source == "Official"){
-            let urlEncodedSearchTerm = encodeURI(searchTerm)
+            let urlEncodedSearchTerm = encodeURIComponent(searchTerm)
             fetch(`https://archlinux.org/packages/search/json/?q=${urlEncodedSearchTerm}`, {signal: controller.signal}).then((response)=>{
                 if (!response.ok){
                     toast.title = "Failed to fetch the search results"
@@ -254,7 +278,7 @@ function useFetchPKGBUILD(packageName:string|null){
     if (packageName.length == 0){
         return () => controller.abort()
     }
-        const encodedPackageName = encodeURI(packageName)
+        const encodedPackageName = encodeURIComponent(packageName)
         fetch(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodedPackageName}`,{signal:controller.signal}).then((response) =>{
             if (!response.ok){
                 throw new Error(`Failed to fetch PKGBUILD: ${response.status}`)
@@ -276,6 +300,7 @@ function useFetchPKGBUILD(packageName:string|null){
 function useFetchPKGBUILDCommits(packageName:string|null){
     const [commits,setCommits] = useState<AURCommits[]>([])
     useEffect(() =>{
+        setCommits([])
         const controller = new AbortController()
         if (packageName == null){
             return () => controller.abort()
@@ -284,7 +309,7 @@ function useFetchPKGBUILDCommits(packageName:string|null){
         if (packageName.length == 0){
             return () => controller.abort()
         }
-        const encodedPackageName = encodeURI(packageName)
+        const encodedPackageName = encodeURIComponent(packageName)
         fetch(`https://aur.archlinux.org/cgit/aur.git/atom/?h=${encodedPackageName}`,{signal:controller.signal}).then((response)=>{
             if (!response.ok){
                 throw new Error(`Failed to fetch commits: ${response.status}`)
@@ -296,7 +321,7 @@ function useFetchPKGBUILDCommits(packageName:string|null){
             let allEntrylements = xmlDoc.getElementsByTagName("entry")
             for (let i =0; i<allEntrylements.length;i++){  
                 if (allEntrylements[i].hasChildNodes() === false){
-                    return
+                    continue
                 }
                 const idContent = String(allEntrylements[i].getElementsByTagName("id")[0].textContent)
                 const titleContent = String(allEntrylements[i].getElementsByTagName("title")[0].textContent)
@@ -333,15 +358,17 @@ useEffect(()=>{
     if (hashRegex == null){
         return () => controller.abort()
     }
-    const urlEncodedPackageName = encodeURI(packageName)
+    const urlEncodedPackageName = encodeURIComponent(packageName)
     fetch(`https://aur.archlinux.org/cgit/aur.git/commit/?h=${urlEncodedPackageName}&id=${hashRegex[1]}`,{signal:controller.signal}).then((response)=>{
         if(!response.ok){
             throw new Error(`Failed to fetch diff: ${response.status}`)
         }
         return response.text()
     }).then((data)=>{
-        console.log(data)
-        setDiffText(data)
+        const htmlDoc = new DOMParser().parseFromString(data,'text/html')
+        let diffObj = htmlDoc.getElementsByClassName("diff").toString()
+        setDiffText(diffObj)
+        console.log(diffObj)
     }).catch((error)=>{
         if(controller.signal.aborted){
             return
@@ -365,13 +392,11 @@ function ReadPKGBUILD(PKGBUILD:string|null){
 }
 function ReadPKGBUILDDiffs({PKGBUILDCommits,packageName} : {PKGBUILDCommits:AURCommits[],packageName:string|null} ){
     const [selectedCommit, setSelectedCommit] = useState<string>("# Select a commit to start")
-    useEffect(() =>{
 
-    })
     let diffs = useFetchPKGBUILDDiffs(packageName,selectedCommit)
 
     return(
-        <Detail markdown={diffs} actions={
+        <Detail markdown={turndownService.turndown(diffs)} actions={
             <ActionPanel>
                 <ActionPanel.Submenu title="Select commit to compare" icon={Icon.Clock}>
                     {PKGBUILDCommits.map((elementObj,index) =>

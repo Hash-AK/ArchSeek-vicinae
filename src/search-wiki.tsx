@@ -43,7 +43,7 @@ interface SearchResult {
 // Function to get a wiki page from it's title
 function useWikiPage(title:any){
 	// safety url encoding
-	let urlEncodedTitle = encodeURI(title)
+	let urlEncodedTitle = encodeURIComponent(title)
 	// React thing to show while waiting for actual results
 	const [wikiText, setWikiText] = useState<string>("Loading content...")
 	
@@ -113,7 +113,7 @@ function useSearchWikiPage(searchTerm: string) {
 			searchTerm=archWikiUrlRegexMarch[3]
 		}
 		
-		let urlEncodedSearchTerm = encodeURI(searchTerm)
+		let urlEncodedSearchTerm = encodeURIComponent(searchTerm)
 		fetch(`https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`,{signal: controller.signal}).then((response) => {
 			if (!response.ok){
 				//Let the user know that an error occured
