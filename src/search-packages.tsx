@@ -114,6 +114,12 @@ interface SearchState {
     officialResults: PackageDescription[]
     AURResults: AURPackageDescription[]
 }
+interface AURCommits{
+    hash: string
+    title: string
+    date: string
+    author: string
+}
 const defaultAurMoreInfoDescription = {CoMaintainers: [""],Conflicts: [""],Depends:[""],Description: "",FirstSubmitted:0,ID:0,Keywords:[""],LastModified:0,License:[""],Maintainer:"",MakeDepends:[""],Name:"",NumVotes:0,OutOfDate:null,PackageBase:"",PackageBaseID:0,Popularity:0,Provides:[""],Submitter:"",URL:"",URLPath:"",Version:""} as AURPackageMoreInfoDescription
 const defaultOutput = {officialResults: [],AURResults: []} as SearchState
 const prefs = getPreferenceValues<Preferences>();
@@ -262,7 +268,7 @@ function useFetchPKGBUILD(packageName:string|null){
     return pkgText
 }
 function useFetchPKGBUILDCommits(packageName:string|null){
-    const [commits,setCommits] = useState<string>("")
+    const [commits,setCommits] = useState<AURCommits[]>([])
     useEffect(() =>{
         const controller = new AbortController()
         if (packageName == null){
@@ -279,29 +285,21 @@ function useFetchPKGBUILDCommits(packageName:string|null){
             }
             return response.text()
         }).then((data)=>{
+            let aurCommits: AURCommits[] = []
             const xmlDoc = new DOMParser().parseFromString(data,"text/xml")
-            //const serialized = new XMLSerializer().serializeToString(xmlDoc)
-            //let allElementsArray = Array(xmlDoc.getElementsByTagName("id")).join("\n").toString()
-            let allElements = xmlDoc.getElementsByTagName("id")
-            let allElementsArray: (string|null)[] = []
-            for (let i =0; i<allElements.length;i++){  
-                if (allElements[i].textContent === null){
+            let allEntrylements = xmlDoc.getElementsByTagName("entry")
+            for (let i =0; i<allEntrylements.length;i++){  
+                if (allEntrylements[i].hasChildNodes() === false){
                     return
                 }
-                allElementsArray.push(allElements[i].textContent)
+                const idContent = String(allEntrylements[i].getElementsByTagName("id")[0].textContent)
+                const titleContent = String(allEntrylements[i].getElementsByTagName("title")[0].textContent)
+                const dateContent = String(allEntrylements[i].getElementsByTagName("published")[0].textContent)
+                const authorContent = String(allEntrylements[i].getElementsByTagName("author")[0].textContent)
+                aurCommits.push({hash: idContent,title:titleContent,date: dateContent,author:authorContent})
                 
             }
-            if (allElementsArray == null){
-                allElementsArray = [""]
-            }
-            console.log(allElementsArray)
-            //filters out null
-            allElementsArray = allElementsArray.filter(x => x !== null)
-            //filtering out initial id tag (which is some sort of url)
-            const allCommits = allElementsArray.filter((id)=>{
-                return !id?.includes('http')
-            })
-            setCommits(allCommits.join("\n").toString())
+            setCommits(aurCommits)
         }).catch((error)=>{
             if(controller.signal.aborted){
                 return
@@ -320,6 +318,20 @@ function ReadPKGBUILD(PKGBUILD:string|null){
     return(
         <Detail markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}  \n\`\`\`\``} actions={
             <ActionPanel>
+            </ActionPanel>
+        }/>
+    )
+}
+function ReadPKGBUILDDiffs(PKGBUILDCommits:AURCommits[]){
+    return(
+        <Detail markdown={`# WIP`} actions={
+            <ActionPanel>
+                <ActionPanel.Submenu title="Select commit to compare" icon={Icon.Clock}>
+                    {PKGBUILDCommits.map((elementObj,index) =>
+                    <Action title={elementObj.title} icon={Icon.Git} onAction={() => console.log(elementObj.hash)} key={index}/>
+                    )
+                    }
+                </ActionPanel.Submenu>
             </ActionPanel>
         }/>
     )
@@ -347,7 +359,7 @@ export default function ArchSeek(){
     let selectedAUR: string| null =null
     let AURPackageInfo: AURPackageMoreInfoDescription = defaultAurMoreInfoDescription
     let PKGBUILD : string|null = null
-    let PKGBUILDCommits: string|null = null
+    let PKGBUILDCommits: AURCommits[] = []
 
     let testText = useSearchPackage(query, sourceDropdown)
     if (selectedId != null){
@@ -404,7 +416,7 @@ export default function ArchSeek(){
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
                         <Action.Push title="View PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
-                        <Action.Push title="View PKGBUILD changes" target={ReadPKGBUILD(PKGBUILDCommits)} icon={Icon.Clock}/>
+                        <Action.Push title="View PKGBUILD changes" target={ReadPKGBUILDDiffs(PKGBUILDCommits)} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
                     </ActionPanel>
