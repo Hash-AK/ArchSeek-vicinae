@@ -199,7 +199,10 @@ function useSearchPackage(searchTerm: string, source: string){
                 if(controller.signal.aborted){
                     return;
                 }
-                //Todo catch erro
+                console.log(`An error occured: ${String(error)}`)
+                toast.style = Toast.Style.Failure
+                toast.title = "An error occured"
+                toast.message = String(error)
             })
         }
         else if (source == "Official"){
@@ -221,7 +224,10 @@ function useSearchPackage(searchTerm: string, source: string){
                 if(controller.signal.aborted){
                     return;
                 }
-                //Todo catch error
+                console.log(`An error occured: ${String(error)}`)
+                toast.style = Toast.Style.Failure
+                toast.title = "An error occured"
+                toast.message = String(error)
             })
         } 
 
@@ -313,6 +319,41 @@ function useFetchPKGBUILDCommits(packageName:string|null){
     return commits
     
 }
+function useFetchPKGBUILDDiffs(packageName:string|null,hash:string|null){
+const [diffText,setDiffText] = useState<string>("")
+useEffect(()=>{
+    const controller = new AbortController()
+    if (packageName == null || hash == null){
+        return () => controller.abort()
+    }
+    if (packageName.length == 0 || hash.length == 0){
+        return () => controller.abort()
+    }
+    const hashRegex = hash?.match(/^urn:sha\d:(.*)/)
+    if (hashRegex == null){
+        return () => controller.abort()
+    }
+    const urlEncodedPackageName = encodeURI(packageName)
+    fetch(`https://aur.archlinux.org/cgit/aur.git/commit/?h=${urlEncodedPackageName}&id=${hashRegex[1]}`,{signal:controller.signal}).then((response)=>{
+        if(!response.ok){
+            throw new Error(`Failed to fetch diff: ${response.status}`)
+        }
+        return response.text()
+    }).then((data)=>{
+        console.log(data)
+        setDiffText(data)
+    }).catch((error)=>{
+        if(controller.signal.aborted){
+            return
+        }
+        console.log(`Failed to fetch diff: ${error}`)
+    })
+    return () => {
+        controller.abort()
+    }
+},[packageName,hash])
+return diffText
+}
 function ReadPKGBUILD(PKGBUILD:string|null){
 
     return(
@@ -322,14 +363,19 @@ function ReadPKGBUILD(PKGBUILD:string|null){
         }/>
     )
 }
-function ReadPKGBUILDDiffs({PKGBUILDCommits} : {PKGBUILDCommits:AURCommits[]}){
+function ReadPKGBUILDDiffs({PKGBUILDCommits,packageName} : {PKGBUILDCommits:AURCommits[],packageName:string|null} ){
     const [selectedCommit, setSelectedCommit] = useState<string>("# Select a commit to start")
+    useEffect(() =>{
+
+    })
+    let diffs = useFetchPKGBUILDDiffs(packageName,selectedCommit)
+
     return(
-        <Detail markdown={selectedCommit} actions={
+        <Detail markdown={diffs} actions={
             <ActionPanel>
                 <ActionPanel.Submenu title="Select commit to compare" icon={Icon.Clock}>
                     {PKGBUILDCommits.map((elementObj,index) =>
-                    <Action title={elementObj.title} icon={Icon.Git} onAction={() => {console.log(elementObj.hash);setSelectedCommit(elementObj.hash)}} key={index}/>
+                    <Action title={elementObj.title} icon={Icon.Git} onAction={() => {setSelectedCommit(elementObj.hash)}} key={index}/>
                     )
                     }
                 </ActionPanel.Submenu>
@@ -417,7 +463,7 @@ export default function ArchSeek(){
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
                         <Action.Push title="View PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
-                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs PKGBUILDCommits={PKGBUILDCommits} />} icon={Icon.Clock}/>
+                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs PKGBUILDCommits={PKGBUILDCommits} packageName={AURPackage.Name} />} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
                     </ActionPanel>
