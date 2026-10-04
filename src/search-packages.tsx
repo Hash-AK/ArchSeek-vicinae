@@ -15,6 +15,7 @@ import {
 	useEffect,
 	useState
 } from 'react';
+import { DOMParser,XMLSerializer } from '@xmldom/xmldom'
 interface Preferences {
     "aur-helper": string;
 }
@@ -278,12 +279,29 @@ function useFetchPKGBUILDCommits(packageName:string|null){
             }
             return response.text()
         }).then((data)=>{
-            console.log(data)
-            setCommits(data)
+            const xmlDoc = new DOMParser().parseFromString(data,"text/xml")
+            //const serialized = new XMLSerializer().serializeToString(xmlDoc)
+            //let allCommits = Array(xmlDoc.getElementsByTagName("id")).join("\n").toString()
+            let allElements = xmlDoc.getElementsByTagName("id")
+            let allCommits: (string|null)[] = []
+            for (let i =0; i<allElements.length;i++){  
+                if (allElements[i].textContent === null){
+                    return
+                }
+                allCommits.push(allElements[i].textContent)
+                
+            }
+            if (allCommits == null){
+                allCommits = [""]
+            }
+            console.log(allCommits)
+            allCommits = allCommits.filter(x => x !== null)
+            setCommits(allCommits.join("\n").toString())
         }).catch((error)=>{
             if(controller.signal.aborted){
                 return
             }
+            console.log(`Failed to fetch PKGBUILD commits: ${error}`)
         })
         return () =>{
             controller.abort()
@@ -295,7 +313,7 @@ function useFetchPKGBUILDCommits(packageName:string|null){
 function ReadPKGBUILD(PKGBUILD:string|null){
 
     return(
-        <Detail markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}\`\`\`\``} actions={
+        <Detail markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}  \n\`\`\`\``} actions={
             <ActionPanel>
             </ActionPanel>
         }/>
