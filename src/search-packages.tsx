@@ -10,7 +10,7 @@ import {
 	Color,
     getPreferenceValues,
 } from "@vicinae/api";
-import TurndownService, * as Turndown from "turndown"
+import TurndownService from "turndown"
 import {
 	useEffect,
 	useState
@@ -321,7 +321,7 @@ function useFetchPKGBUILD(packageName:string|null){
 function useFetchPKGBUILDCommits(packageName:string|null){
     const [commits,setCommits] = useState<AURCommits[]>([])
     useEffect(() =>{
-        setCommits([])
+        
         const controller = new AbortController()
         if (packageName == null){
             return () => controller.abort()
@@ -366,18 +366,21 @@ function useFetchPKGBUILDCommits(packageName:string|null){
     
 }
 function useFetchPKGBUILDDiffs(packageName:string|null,hash:string|null){
-const [diffText,setDiffText] = useState<string>("")
+const [diffText,setDiffText] = useState<string>("Select a commit to start.")
 useEffect(()=>{
     setDiffText("")
     const controller = new AbortController()
     if (packageName == null || hash == null){
+        setDiffText("Select a commit to start.")
         return () => controller.abort()
     }
     if (packageName.length == 0 || hash.length == 0){
+        setDiffText("Select a commit to start.")
         return () => controller.abort()
     }
     const hashRegex = hash?.match(/^urn:sha\d:(.*)/)
     if (hashRegex == null){
+        setDiffText("Select a commit to start.")
         return () => controller.abort()
     }
     const urlEncodedPackageName = encodeURIComponent(packageName)
@@ -412,12 +415,11 @@ function ReadPKGBUILD(PKGBUILD:string|null){
     )
 }
 function ReadPKGBUILDDiffs({PKGBUILDCommits,packageName} : {PKGBUILDCommits:AURCommits[],packageName:string|null} ){
-    const [selectedCommit, setSelectedCommit] = useState<string>("# Select a commit to start")
-
+    const [selectedCommit, setSelectedCommit] = useState<string>("")
     let diffs = useFetchPKGBUILDDiffs(packageName,selectedCommit)
 
     return(
-        <Detail markdown={turndownService.turndown(diffs)} actions={
+        <Detail markdown={`# ${packageName}  \n### PKGBUILD CHANGES  \n---  \n${turndownService.turndown(diffs)}`} actions={
             <ActionPanel>
                 <ActionPanel.Submenu title="Select commit to compare" icon={Icon.Clock}>
                     {PKGBUILDCommits.map((elementObj,index) =>
@@ -425,6 +427,7 @@ function ReadPKGBUILDDiffs({PKGBUILDCommits,packageName} : {PKGBUILDCommits:AURC
                     )
                     }
                 </ActionPanel.Submenu>
+
             </ActionPanel>
         }/>
     )
