@@ -119,17 +119,18 @@ const prefs = getPreferenceValues<Preferences>();
 function useGetMoreAURInfo(packageName: string|null){
     const [info,setInfo] = useState<AURPackageMoreInfoDescription>(defaultAurMoreInfoDescription)
     useEffect(() => {
+    const controller = new AbortController();
     if (packageName == null){
-        return
+        return () => controller.abort()
     }
     if (packageName.length == 0){
-        return
+        return () => controller.abort()
     }
 
     (async() =>{
     const toast = await showToast({ title: "Fetching package info...", style: Toast.Style.Animated})
     let urlEncodedName = encodeURI(packageName)
-    fetch(`https://aur.archlinux.org/rpc/v5/info?arg[]=${urlEncodedName}`).then((response) =>{
+    fetch(`https://aur.archlinux.org/rpc/v5/info?arg[]=${urlEncodedName}`,{signal: controller.signal}).then((response) =>{
         if(!response.ok){
             toast.title = "Failed to fetch package info"
             toast.message = String(response.status)
@@ -143,17 +144,25 @@ function useGetMoreAURInfo(packageName: string|null){
         setInfo(results)
         toast.style = Toast.Style.Success
         toast.title = "Package info fetched!"
+    }).catch((error)=>{
+        if(controller.signal.aborted){
+            return
+        }
     })
     })()
+    return () => {
+        controller.abort()
+    }
     },[packageName])
     return info
 }
 function useSearchPackage(searchTerm: string, source: string){
     const [packageSearch, setPackageSearch] = useState<SearchState>(defaultOutput)
         useEffect(() => {
+        const controller = new AbortController();
         if(searchTerm.length==0){
             setPackageSearch(defaultOutput)
-            return
+            return () => controller.abort()
         }
 
         const timeout = setTimeout(async ()=>{
@@ -166,7 +175,7 @@ function useSearchPackage(searchTerm: string, source: string){
         */
         if (source == "AUR"){
             let urlEncodedSearchTerm = encodeURI(searchTerm)
-            fetch(`https://aur.archlinux.org/rpc/v5/search/${urlEncodedSearchTerm}`).then((response)=> {
+            fetch(`https://aur.archlinux.org/rpc/v5/search/${urlEncodedSearchTerm}`, {signal: controller.signal}).then((response)=> {
                 if (!response.ok){
                     toast.title = "Failed to fetch the search results"
                     toast.message = String(response.status)
@@ -179,11 +188,16 @@ function useSearchPackage(searchTerm: string, source: string){
                 setPackageSearch({officialResults:[], AURResults: typedData.results})
                 toast.style = Toast.Style.Success;
                 toast.title = "Search complete";
+            }).catch((error)=>{
+                if(controller.signal.aborted){
+                    return;
+                }
+                //Todo catch erro
             })
         }
         else if (source == "Official"){
             let urlEncodedSearchTerm = encodeURI(searchTerm)
-            fetch(`https://archlinux.org/packages/search/json/?q=${urlEncodedSearchTerm}`).then((response)=>{
+            fetch(`https://archlinux.org/packages/search/json/?q=${urlEncodedSearchTerm}`, {signal: controller.signal}).then((response)=>{
                 if (!response.ok){
                     toast.title = "Failed to fetch the search results"
                     toast.message = String(response.status)
@@ -196,11 +210,19 @@ function useSearchPackage(searchTerm: string, source: string){
                 setPackageSearch({officialResults: typedData.results,AURResults:[]})
                 toast.style = Toast.Style.Success;
                 toast.title = "Search complete";
+            }).catch((error)=>{
+                if(controller.signal.aborted){
+                    return;
+                }
+                //Todo catch error
             })
         } 
 
         },400)
-        return() => clearTimeout(timeout)
+        return() => {
+            clearTimeout(timeout)
+            controller.abort()
+        }
 
     },[searchTerm,source])
 
@@ -212,21 +234,29 @@ function useFetchPKGBUILD(packageName:string|null){
 
 
     useEffect(()=>{
+    const controller = new AbortController();
     if (packageName == null){
-        return
+        return () => controller.abort()
     }
     if (packageName.length == 0){
-        return
+        return () => controller.abort()
     }
         const encodedPackageName = encodeURI(packageName)
-        fetch(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodedPackageName}`).then((response) =>{
+        fetch(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodedPackageName}`,{signal:controller.signal}).then((response) =>{
             if (!response.ok){
                 throw new Error(`Failed to fetch PKGBUILD:: ${response.status}`)
             }
             return response.text()
         }).then((data) =>{
             setPkgText(data)
+        }).catch((error) =>{
+            if (controller.signal.aborted){
+                return
+            }
         })
+        return () =>{
+            controller.abort()
+        }
     },[packageName])
     return pkgText
 }
@@ -304,7 +334,7 @@ export default function ArchSeek(){
                 )}
                 {testText.AURResults.map((AURPackage,index) => 
                 <List.Item id={String(index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts?.length) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Provides)&& (AURPackageInfo?.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo?.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? ` (${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${new Date(AURPackage.FirstSubmitted * 1000).toLocaleString()}  \n**Last Updated:** ${new Date(AURPackage.LastModified * 1000).toLocaleString()}`}/>
+                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Provides)&& (AURPackageInfo?.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo?.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? ` (${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${new Date(AURPackage.FirstSubmitted * 1000).toLocaleString()}  \n**Last Updated:** ${new Date(AURPackage.LastModified * 1000).toLocaleString()}`}/>
                 } accessories={[
                     { tag: { value: "AUR", color: Color.Green}}
                 ]} actions={

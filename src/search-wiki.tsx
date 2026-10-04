@@ -46,19 +46,21 @@ function useWikiPage(title:any){
 	let urlEncodedTitle = encodeURI(title)
 	// React thing to show while waiting for actual results
 	const [wikiText, setWikiText] = useState<string>("Loading content...")
+	
 	useEffect(() => {
+		const controller = new AbortController();
 		//safety checks
 		if (title == null) {
-			return
+			return () => controller.abort()
 		}
 		if (title.length == 0 ){
-			return
+			return () => controller.abort()
 		}
 		(async() =>{
 		// Toastytoast
 		const toast = await showToast({ title: "Fetching...", style: Toast.Style.Animated })
 		//actual fetch command, follow both HTTP redirect and Mediawiki page redirects
-		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedTitle}&format=json&prop=text&redirects=1`,{redirect: 'follow'}).then((response) => {
+		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedTitle}&format=json&prop=text&redirects=1`,{redirect: 'follow',signal: controller.signal}).then((response) => {
 			if (!response.ok) {
 				toast.title = "Failed to fetch wiki's page"
 				toast.message = String(response.status)
@@ -72,8 +74,16 @@ function useWikiPage(title:any){
 			setWikiText(data.parse.text["*"])
 			toast.title = "Page fetched!"
 			toast.style = Toast.Style.Success
+		}).catch((error)=>{
+			if (controller.signal.aborted){
+				return
+			}
+			//Todo catch errors
 		})
 		})()
+		return () =>{
+			controller.abort()
+		}
 	// this make sure it only runs if the title change
 	},[title])
 	return wikiText
@@ -88,9 +98,10 @@ function useSearchWikiPage(searchTerm: string) {
 	const [wikiSearch, setWikiSearch] = useState<SearchResult>(defaultOuput)
 
 	useEffect(() => {
+		const controller = new AbortController();
 		if (searchTerm.length == 0){
 			setWikiSearch(defaultOuput)
-			return
+			return () => controller.abort()
 		}
 		const timeout = setTimeout(async () =>{
 		// Toast so that user know to wait
@@ -103,7 +114,7 @@ function useSearchWikiPage(searchTerm: string) {
 		}
 		
 		let urlEncodedSearchTerm = encodeURI(searchTerm)
-		fetch(`https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`).then((response) => {
+		fetch(`https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`,{signal: controller.signal}).then((response) => {
 			if (!response.ok){
 				//Let the user know that an error occured
 				toast.title = "Failed to fetch the search results"
@@ -131,9 +142,18 @@ function useSearchWikiPage(searchTerm: string) {
 			setWikiSearch(searchResult)
 			toast.style = Toast.Style.Success;
             toast.title = "Search complete";
+		}).catch((error)=>{
+			if(controller.signal.aborted){
+				return
+
+			}
+			//todo catch errors sob
 		})
 		},200)
-		return() => clearTimeout(timeout)
+		return() => {
+			clearTimeout(timeout)
+			controller.abort()
+		}
 	},[searchTerm])
 	
 	return wikiSearch
