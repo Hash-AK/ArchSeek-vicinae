@@ -322,13 +322,14 @@ function ReadPKGBUILD(PKGBUILD:string|null){
         }/>
     )
 }
-function ReadPKGBUILDDiffs(PKGBUILDCommits:AURCommits[]){
+function ReadPKGBUILDDiffs({PKGBUILDCommits} : {PKGBUILDCommits:AURCommits[]}){
+    const [selectedCommit, setSelectedCommit] = useState<string>("# Select a commit to start")
     return(
-        <Detail markdown={`# WIP`} actions={
+        <Detail markdown={selectedCommit} actions={
             <ActionPanel>
                 <ActionPanel.Submenu title="Select commit to compare" icon={Icon.Clock}>
                     {PKGBUILDCommits.map((elementObj,index) =>
-                    <Action title={elementObj.title} icon={Icon.Git} onAction={() => console.log(elementObj.hash)} key={index}/>
+                    <Action title={elementObj.title} icon={Icon.Git} onAction={() => {console.log(elementObj.hash);setSelectedCommit(elementObj.hash)}} key={index}/>
                     )
                     }
                 </ActionPanel.Submenu>
@@ -416,7 +417,7 @@ export default function ArchSeek(){
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
                         <Action.Push title="View PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
-                        <Action.Push title="View PKGBUILD changes" target={ReadPKGBUILDDiffs(PKGBUILDCommits)} icon={Icon.Clock}/>
+                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs PKGBUILDCommits={PKGBUILDCommits} />} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
                     </ActionPanel>
