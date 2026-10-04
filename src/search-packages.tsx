@@ -281,21 +281,26 @@ function useFetchPKGBUILDCommits(packageName:string|null){
         }).then((data)=>{
             const xmlDoc = new DOMParser().parseFromString(data,"text/xml")
             //const serialized = new XMLSerializer().serializeToString(xmlDoc)
-            //let allCommits = Array(xmlDoc.getElementsByTagName("id")).join("\n").toString()
+            //let allElementsArray = Array(xmlDoc.getElementsByTagName("id")).join("\n").toString()
             let allElements = xmlDoc.getElementsByTagName("id")
-            let allCommits: (string|null)[] = []
+            let allElementsArray: (string|null)[] = []
             for (let i =0; i<allElements.length;i++){  
                 if (allElements[i].textContent === null){
                     return
                 }
-                allCommits.push(allElements[i].textContent)
+                allElementsArray.push(allElements[i].textContent)
                 
             }
-            if (allCommits == null){
-                allCommits = [""]
+            if (allElementsArray == null){
+                allElementsArray = [""]
             }
-            console.log(allCommits)
-            allCommits = allCommits.filter(x => x !== null)
+            console.log(allElementsArray)
+            //filters out null
+            allElementsArray = allElementsArray.filter(x => x !== null)
+            //filtering out initial id tag (which is some sort of url)
+            const allCommits = allElementsArray.filter((id)=>{
+                return !id?.includes('http')
+            })
             setCommits(allCommits.join("\n").toString())
         }).catch((error)=>{
             if(controller.signal.aborted){
