@@ -9,14 +9,13 @@ import {
 	Toast,
 	Color,
     getPreferenceValues,
-	useNavigation
 } from "@vicinae/api";
 import TurndownService, * as Turndown from "turndown"
 import {
 	useEffect,
 	useState
 } from 'react';
-import { DOMParser,XMLSerializer } from '@xmldom/xmldom'
+import { DOMParser } from '@xmldom/xmldom'
 interface Preferences {
     "aur-helper": string;
 }
@@ -147,9 +146,30 @@ turndownService.addRule('add',{
         return '<span style="color:green">' + content + '</span>'
     }
 })
+turndownService.addRule('hunk',{
+    filter: function (node){
+        return(
+            node.className === 'hunk'
+        )
+    },
+    replacement: function (content){
+        return '<span style="color:#5c5cbd">' + content + '</span>'
+    }
+})
+turndownService.addRule('head',{
+    filter: function (node){
+        return(
+            node.className === 'head'
+        )
+        
+    },replacement: function(content){
+            return '**' + content + '**  \n'
+    }
+})
 function useGetMoreAURInfo(packageName: string|null){
     const [info,setInfo] = useState<AURPackageMoreInfoDescription>(defaultAurMoreInfoDescription)
     useEffect(() => {
+    setInfo(defaultAurMoreInfoDescription)
     const controller = new AbortController();
     if (packageName == null){
         return () => controller.abort()
@@ -271,6 +291,7 @@ function useFetchPKGBUILD(packageName:string|null){
 
 
     useEffect(()=>{
+    setPkgText("")
     const controller = new AbortController();
     if (packageName == null){
         return () => controller.abort()
@@ -347,6 +368,7 @@ function useFetchPKGBUILDCommits(packageName:string|null){
 function useFetchPKGBUILDDiffs(packageName:string|null,hash:string|null){
 const [diffText,setDiffText] = useState<string>("")
 useEffect(()=>{
+    setDiffText("")
     const controller = new AbortController()
     if (packageName == null || hash == null){
         return () => controller.abort()
@@ -368,7 +390,6 @@ useEffect(()=>{
         const htmlDoc = new DOMParser().parseFromString(data,'text/html')
         let diffObj = htmlDoc.getElementsByClassName("diff").toString()
         setDiffText(diffObj)
-        console.log(diffObj)
     }).catch((error)=>{
         if(controller.signal.aborted){
             return
@@ -488,7 +509,7 @@ export default function ArchSeek(){
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
                         <Action.Push title="View PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
-                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs PKGBUILDCommits={PKGBUILDCommits} packageName={AURPackage.Name} />} icon={Icon.Clock}/>
+                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs PKGBUILDCommits={PKGBUILDCommits} packageName={AURPackage.PackageBase} />} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
                     </ActionPanel>
