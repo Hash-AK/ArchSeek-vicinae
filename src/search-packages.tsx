@@ -143,7 +143,7 @@ turndownService.addRule('add',{
         )
     },
     replacement: function(content){
-        return '<span style="color:green">' + content + '</span>'
+        return '<span style="color:green">' + content + '</span>  \n'
     }
 })
 turndownService.addRule('hunk',{
@@ -153,7 +153,7 @@ turndownService.addRule('hunk',{
         )
     },
     replacement: function (content){
-        return '<span style="color:#5c5cbd">' + content + '</span>'
+        return '<span style="color:#5c5cbd">' + content + '</span>  \n'
     }
 })
 turndownService.addRule('head',{
@@ -199,6 +199,9 @@ function useGetMoreAURInfo(packageName: string|null){
         if(controller.signal.aborted){
             return
         }
+        toast.style = Toast.Style.Failure
+        toast.title = "Failed to fetch package info"
+        console.log(`Failed to fetch package info: ${error}`)
     })
     })()
     return () => {
@@ -224,13 +227,23 @@ function useSearchPackage(searchTerm: string, source: string){
             return
         }
         */
+       
         if (source == "AUR"){
+            //Aurweb rpc limitation
+            if (searchTerm.length < 2 ){
+                toast.title = "Your query must be at least 2 characters long"
+                toast.style = Toast.Style.Failure
+                setPackageSearch(defaultOutput)
+                return () => controller.abort()
+    
+            }
             let urlEncodedSearchTerm = encodeURIComponent(searchTerm)
             fetch(`https://aur.archlinux.org/rpc/v5/search/${urlEncodedSearchTerm}`, {signal: controller.signal}).then((response)=> {
                 if (!response.ok){
                     toast.title = "Failed to fetch the search results"
                     toast.message = String(response.status)
                     toast.style = Toast.Style.Failure
+                    console.log(response.status +  " " + response.statusText)
                     throw new Error(`Failed to fetch the search page: ${response.status}`)
                 }
                 return response.json()
@@ -291,6 +304,7 @@ function useFetchPKGBUILD(packageName:string|null){
 
 
     useEffect(()=>{
+    (async() =>{
     setPkgText("")
     const controller = new AbortController();
     if (packageName == null){
@@ -299,29 +313,39 @@ function useFetchPKGBUILD(packageName:string|null){
     if (packageName.length == 0){
         return () => controller.abort()
     }
+        const toast = await showToast({title: "Fetching PKGBUILD",style: Toast.Style.Animated})
         const encodedPackageName = encodeURIComponent(packageName)
         fetch(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodedPackageName}`,{signal:controller.signal}).then((response) =>{
             if (!response.ok){
+                toast.style = Toast.Style.Failure
+                toast.title = "Failed to fetch PKGBUILD"
+                toast.message = String(response.status)
                 throw new Error(`Failed to fetch PKGBUILD: ${response.status}`)
             }
             return response.text()
         }).then((data) =>{
+            toast.style = Toast.Style.Success
+            toast.title = "PKGBUILD fetched"
             setPkgText(data)
         }).catch((error) =>{
             if (controller.signal.aborted){
                 return
             }
+            toast.style = Toast.Style.Failure
+            toast.title = "Failed to fetch PKGBUILD"
+            console.log(`Failed to fetch the PKGBUILD: ${error}`)
         })
         return () =>{
             controller.abort()
         }
+    })()
     },[packageName])
     return pkgText
 }
 function useFetchPKGBUILDCommits(packageName:string|null){
     const [commits,setCommits] = useState<AURCommits[]>([])
     useEffect(() =>{
-        
+        (async() =>{
         const controller = new AbortController()
         if (packageName == null){
             return () => controller.abort()
@@ -330,9 +354,14 @@ function useFetchPKGBUILDCommits(packageName:string|null){
         if (packageName.length == 0){
             return () => controller.abort()
         }
+        const toast = await showToast({title: "Fetching commits",style: Toast.Style.Animated})
+
         const encodedPackageName = encodeURIComponent(packageName)
         fetch(`https://aur.archlinux.org/cgit/aur.git/atom/?h=${encodedPackageName}`,{signal:controller.signal}).then((response)=>{
             if (!response.ok){
+                console.log(response.statusText)
+                toast.style = Toast.Style.Failure
+                toast.title = "Failed to fetch commits"
                 throw new Error(`Failed to fetch commits: ${response.status}`)
             }
             return response.text()
@@ -351,16 +380,21 @@ function useFetchPKGBUILDCommits(packageName:string|null){
                 aurCommits.push({hash: idContent,title:titleContent,date: dateContent,author:authorContent})
                 
             }
+            toast.style = Toast.Style.Success
+            toast.title = "Commits fetched successfully!"
             setCommits(aurCommits)
         }).catch((error)=>{
             if(controller.signal.aborted){
                 return
             }
+            toast.style = Toast.Style.Failure
+            toast.title = "Failed to fetch commits"
             console.log(`Failed to fetch PKGBUILD commits: ${error}`)
         })
         return () =>{
             controller.abort()
         }
+    })()
     },[packageName])
     return commits
     
@@ -368,6 +402,7 @@ function useFetchPKGBUILDCommits(packageName:string|null){
 function useFetchPKGBUILDDiffs(packageName:string|null,hash:string|null){
 const [diffText,setDiffText] = useState<string>("Select a commit to start.")
 useEffect(()=>{
+    (async() =>{
     setDiffText("")
     const controller = new AbortController()
     if (packageName == null || hash == null){
@@ -378,30 +413,38 @@ useEffect(()=>{
         setDiffText("Select a commit to start.")
         return () => controller.abort()
     }
-    const hashRegex = hash?.match(/^urn:sha\d:(.*)/)
+    const hashRegex = hash?.match(/^urn:sha\d*:(.*)/)
     if (hashRegex == null){
         setDiffText("Select a commit to start.")
         return () => controller.abort()
     }
+    const toast = await showToast({title: "Fetching diffs",style: Toast.Style.Animated})
     const urlEncodedPackageName = encodeURIComponent(packageName)
     fetch(`https://aur.archlinux.org/cgit/aur.git/commit/?h=${urlEncodedPackageName}&id=${hashRegex[1]}`,{signal:controller.signal}).then((response)=>{
         if(!response.ok){
+            toast.style = Toast.Style.Failure
+            toast.title = "Failed to fetch diffs"
             throw new Error(`Failed to fetch diff: ${response.status}`)
         }
         return response.text()
     }).then((data)=>{
         const htmlDoc = new DOMParser().parseFromString(data,'text/html')
         let diffObj = htmlDoc.getElementsByClassName("diff").toString()
+        toast.style = Toast.Style.Success
+        toast.title = "Diffs fetched!"
         setDiffText(diffObj)
     }).catch((error)=>{
         if(controller.signal.aborted){
             return
         }
+        toast.style = Toast.Style.Failure
+        toast.title = "Failed to fetch diffs"
         console.log(`Failed to fetch diff: ${error}`)
     })
     return () => {
         controller.abort()
     }
+})()
 },[packageName,hash])
 return diffText
 }
