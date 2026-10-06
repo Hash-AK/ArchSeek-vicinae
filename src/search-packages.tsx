@@ -16,6 +16,7 @@ import {
 	useState
 } from 'react';
 import { DOMParser } from '@xmldom/xmldom'
+import { useFetch } from '@raycast/utils'
 interface Preferences {
     "aur-helper": string;
 }
@@ -300,6 +301,26 @@ function useSearchPackage(searchTerm: string, source: string){
     return packageSearch
 }
 function useFetchPKGBUILD(packageName:string|null){
+    let doWeExecute : boolean = true
+    if (packageName == null){
+        doWeExecute = false
+    }
+    if (packageName?.length == 0){
+        doWeExecute = false
+    }
+    const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute })
+    console.log(data)
+    return {
+        PKGBUILD: data ?? "",
+        isLoading,
+        revalidate,
+        error
+    }
+    
+
+}
+/*
+function useFetchPKGBUILD(packageName:string|null){
     const [pkgText, setPkgText] = useState<string>("")
 
 
@@ -342,6 +363,47 @@ function useFetchPKGBUILD(packageName:string|null){
     },[packageName])
     return pkgText
 }
+    */
+function useFetchPKGBUILDCommits(packageName:string|null){
+    let doWeExecute : boolean = true
+    if (packageName == null){
+        doWeExecute = false
+    }
+    if (packageName?.length == 0){
+        doWeExecute = false
+    }
+    const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/atom/?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute})
+    if (error){
+        console.log(`Error: ${error}`)
+    } 
+        let aurCommits : AURCommits[] = []
+        if (data){
+        console.log(`Data XML: ${data}`)
+        const xmlDoc = new DOMParser().parseFromString(String(data),"text/xml")
+        let allEntrylements = xmlDoc.getElementsByTagName("entry")
+        for (let i =0; i<allEntrylements.length;i++){  
+                if (allEntrylements[i].hasChildNodes() === false){
+                    continue
+                }
+                const idContent = String(allEntrylements[i].getElementsByTagName("id")[0].textContent)
+                const titleContent = String(allEntrylements[i].getElementsByTagName("title")[0].textContent)
+                const dateContent = String(allEntrylements[i].getElementsByTagName("published")[0].textContent)
+                const authorContent = String(allEntrylements[i].getElementsByTagName("author")[0].textContent)
+                aurCommits.push({hash: idContent,title:titleContent,date: dateContent,author:authorContent})
+                
+        
+
+    }
+}
+    return {
+        aurCommits: aurCommits,
+        isLoading,
+        revalidate,
+        error
+    }
+
+}
+/*
 function useFetchPKGBUILDCommits(packageName:string|null){
     const [commits,setCommits] = useState<AURCommits[]>([])
     useEffect(() =>{
@@ -399,6 +461,7 @@ function useFetchPKGBUILDCommits(packageName:string|null){
     return commits
     
 }
+*/
 function useFetchPKGBUILDDiffs(packageName:string|null,hash:string|null){
 const [diffText,setDiffText] = useState<string>("Select a commit to start.")
 useEffect(()=>{
@@ -457,7 +520,7 @@ function ReadPKGBUILD(PKGBUILD:string|null){
         }/>
     )
 }
-function ReadPKGBUILDDiffs({PKGBUILDCommits,packageName} : {PKGBUILDCommits:AURCommits[],packageName:string|null} ){
+function ReadPKGBUILDDiffs({PKGBUILDCommits,packageName, revalidate} : {PKGBUILDCommits:AURCommits[],packageName:string|null,revalidate:() => void} ){
     const [selectedCommit, setSelectedCommit] = useState<string>("")
     let diffs = useFetchPKGBUILDDiffs(packageName,selectedCommit)
 
@@ -470,6 +533,7 @@ function ReadPKGBUILDDiffs({PKGBUILDCommits,packageName} : {PKGBUILDCommits:AURC
                     )
                     }
                 </ActionPanel.Submenu>
+                <Action title="Reload commits" onAction={revalidate}/>
 
             </ActionPanel>
         }/>
@@ -497,8 +561,6 @@ export default function ArchSeek(){
     let selectedPKGBase: string | null = null
     let selectedAUR: string| null =null
     let AURPackageInfo: AURPackageMoreInfoDescription = defaultAurMoreInfoDescription
-    let PKGBUILD : string|null = null
-    let PKGBUILDCommits: AURCommits[] = []
 
     let testText = useSearchPackage(query, sourceDropdown)
     if (selectedId != null){
@@ -515,8 +577,8 @@ export default function ArchSeek(){
         selectedPackage = ""
     }
     AURPackageInfo = useGetMoreAURInfo(selectedAUR)
-    PKGBUILD = useFetchPKGBUILD(selectedPKGBase)
-    PKGBUILDCommits = useFetchPKGBUILDCommits(selectedPKGBase)
+    const {PKGBUILD,isLoading:isLoadingPKGBUILD,revalidate:revalidatePKGBUILD,error:PKGBUILDerror} = useFetchPKGBUILD(selectedPKGBase)
+    const {aurCommits:PKGBUILDCommits,isLoading:isLoadingPKGBUILDCommits,revalidate:revalidatePKGBUILDCommits,error:errorPKGBUILDCommits} = useFetchPKGBUILDCommits(selectedPKGBase)
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
@@ -555,7 +617,7 @@ export default function ArchSeek(){
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
                         <Action.Push title="View PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
-                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs PKGBUILDCommits={PKGBUILDCommits} packageName={AURPackage.PackageBase} />} icon={Icon.Clock}/>
+                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs PKGBUILDCommits={PKGBUILDCommits}  packageName={AURPackage.PackageBase} revalidate={revalidatePKGBUILDCommits} />} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
                     </ActionPanel>
