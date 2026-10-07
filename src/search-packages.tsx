@@ -520,10 +520,10 @@ function ReadPKGBUILD(PKGBUILD:string|null){
         }/>
     )
 }
-function ReadPKGBUILDDiffs({PKGBUILDCommits,packageName, revalidate} : {PKGBUILDCommits:AURCommits[],packageName:string|null,revalidate:() => void} ){
+function ReadPKGBUILDDiffs({packageName} : {packageName:string|null} ){
+    const {aurCommits:PKGBUILDCommits,isLoading,revalidate,error} = useFetchPKGBUILDCommits(packageName)
     const [selectedCommit, setSelectedCommit] = useState<string>("")
     let diffs = useFetchPKGBUILDDiffs(packageName,selectedCommit)
-
     return(
         <Detail markdown={`# ${packageName}  \n### PKGBUILD CHANGES  \n---  \n${turndownService.turndown(diffs)}`} actions={
             <ActionPanel>
@@ -578,7 +578,6 @@ export default function ArchSeek(){
     }
     AURPackageInfo = useGetMoreAURInfo(selectedAUR)
     const {PKGBUILD,isLoading:isLoadingPKGBUILD,revalidate:revalidatePKGBUILD,error:PKGBUILDerror} = useFetchPKGBUILD(selectedPKGBase)
-    const {aurCommits:PKGBUILDCommits,isLoading:isLoadingPKGBUILDCommits,revalidate:revalidatePKGBUILDCommits,error:errorPKGBUILDCommits} = useFetchPKGBUILDCommits(selectedPKGBase)
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
@@ -617,7 +616,7 @@ export default function ArchSeek(){
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
                         <Action.Push title="View PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
-                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs PKGBUILDCommits={PKGBUILDCommits}  packageName={AURPackage.PackageBase} revalidate={revalidatePKGBUILDCommits} />} icon={Icon.Clock}/>
+                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs packageName={AURPackage.PackageBase} />} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
                     </ActionPanel>
