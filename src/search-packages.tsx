@@ -319,51 +319,7 @@ function useFetchPKGBUILD(packageName:string|null){
     
 
 }
-/*
-function useFetchPKGBUILD(packageName:string|null){
-    const [pkgText, setPkgText] = useState<string>("")
 
-
-    useEffect(()=>{
-    (async() =>{
-    setPkgText("")
-    const controller = new AbortController();
-    if (packageName == null){
-        return () => controller.abort()
-    }
-    if (packageName.length == 0){
-        return () => controller.abort()
-    }
-        const toast = await showToast({title: "Fetching PKGBUILD",style: Toast.Style.Animated})
-        const encodedPackageName = encodeURIComponent(packageName)
-        fetch(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodedPackageName}`,{signal:controller.signal}).then((response) =>{
-            if (!response.ok){
-                toast.style = Toast.Style.Failure
-                toast.title = "Failed to fetch PKGBUILD"
-                toast.message = String(response.status)
-                throw new Error(`Failed to fetch PKGBUILD: ${response.status}`)
-            }
-            return response.text()
-        }).then((data) =>{
-            toast.style = Toast.Style.Success
-            toast.title = "PKGBUILD fetched"
-            setPkgText(data)
-        }).catch((error) =>{
-            if (controller.signal.aborted){
-                return
-            }
-            toast.style = Toast.Style.Failure
-            toast.title = "Failed to fetch PKGBUILD"
-            console.log(`Failed to fetch the PKGBUILD: ${error}`)
-        })
-        return () =>{
-            controller.abort()
-        }
-    })()
-    },[packageName])
-    return pkgText
-}
-    */
 function useFetchPKGBUILDCommits(packageName:string|null){
     let doWeExecute : boolean = true
     if (packageName == null){
@@ -403,65 +359,7 @@ function useFetchPKGBUILDCommits(packageName:string|null){
     }
 
 }
-/*
-function useFetchPKGBUILDCommits(packageName:string|null){
-    const [commits,setCommits] = useState<AURCommits[]>([])
-    useEffect(() =>{
-        (async() =>{
-        const controller = new AbortController()
-        if (packageName == null){
-            return () => controller.abort()
-            
-        }
-        if (packageName.length == 0){
-            return () => controller.abort()
-        }
-        const toast = await showToast({title: "Fetching commits",style: Toast.Style.Animated})
 
-        const encodedPackageName = encodeURIComponent(packageName)
-        fetch(`https://aur.archlinux.org/cgit/aur.git/atom/?h=${encodedPackageName}`,{signal:controller.signal}).then((response)=>{
-            if (!response.ok){
-                console.log(response.statusText)
-                toast.style = Toast.Style.Failure
-                toast.title = "Failed to fetch commits"
-                throw new Error(`Failed to fetch commits: ${response.status}`)
-            }
-            return response.text()
-        }).then((data)=>{
-            let aurCommits: AURCommits[] = []
-            const xmlDoc = new DOMParser().parseFromString(data,"text/xml")
-            let allEntrylements = xmlDoc.getElementsByTagName("entry")
-            for (let i =0; i<allEntrylements.length;i++){  
-                if (allEntrylements[i].hasChildNodes() === false){
-                    continue
-                }
-                const idContent = String(allEntrylements[i].getElementsByTagName("id")[0].textContent)
-                const titleContent = String(allEntrylements[i].getElementsByTagName("title")[0].textContent)
-                const dateContent = String(allEntrylements[i].getElementsByTagName("published")[0].textContent)
-                const authorContent = String(allEntrylements[i].getElementsByTagName("author")[0].textContent)
-                aurCommits.push({hash: idContent,title:titleContent,date: dateContent,author:authorContent})
-                
-            }
-            toast.style = Toast.Style.Success
-            toast.title = "Commits fetched successfully!"
-            setCommits(aurCommits)
-        }).catch((error)=>{
-            if(controller.signal.aborted){
-                return
-            }
-            toast.style = Toast.Style.Failure
-            toast.title = "Failed to fetch commits"
-            console.log(`Failed to fetch PKGBUILD commits: ${error}`)
-        })
-        return () =>{
-            controller.abort()
-        }
-    })()
-    },[packageName])
-    return commits
-    
-}
-*/
 function useFetchPKGBUILDDiffs(packageName:string|null,hash:string|null){
 const [diffText,setDiffText] = useState<string>("Select a commit to start.")
 useEffect(()=>{
