@@ -308,7 +308,10 @@ function useFetchPKGBUILD(packageName:string|null){
     if (packageName?.length == 0){
         doWeExecute = false
     }
-    const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute })
+    const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute,async onError(error){await showToast({title:"Failed to fetch PKGBUILD",style:Toast.Style.Failure,message:String(error)})},async onData(){await showToast({title:"PKGBUILD successfully fetched!",style:Toast.Style.Success})}})
+    if (error){
+        console.log(`Error: ${error}`)
+    }
     console.log(data)
     return {
         PKGBUILD: data ?? "",
@@ -328,7 +331,8 @@ function useFetchPKGBUILDCommits(packageName:string|null){
     if (packageName?.length == 0){
         doWeExecute = false
     }
-    const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/atom/?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute})
+
+    const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/atom/?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch commits list",message:String(error)})},async onData(){await showToast({title:"Commits successfully fetched!",style:Toast.Style.Success})}})
     if (error){
         console.log(`Error: ${error}`)
     } 
@@ -353,10 +357,11 @@ function useFetchPKGBUILDCommits(packageName:string|null){
 }
     return {
         aurCommits: aurCommits,
-        isLoading,
+        isLoading: doWeExecute ? isLoading : false,
         revalidate,
         error
     }
+
 
 }
 
@@ -423,6 +428,7 @@ function ReadPKGBUILDDiffs({packageName} : {packageName:string|null} ){
     const [selectedCommit, setSelectedCommit] = useState<string>("")
     const [selectedID, setSelectedID] = useState<number>()
     let diffs = useFetchPKGBUILDDiffs(packageName,selectedCommit)
+    
     return(
         <Detail
         markdown={`## **${packageName}** | PKGBUILD Changes  \n  ${ selectedID != undefined ?  `\n#### **Title:** ${PKGBUILDCommits[Number(selectedID)].title}  \n#### **Author:** ${PKGBUILDCommits[Number(selectedID)].author.replace(/[\r\n]+/gm,"")}  \n#### **Date:** ${new Date(PKGBUILDCommits[Number(selectedID)].date).toLocaleString()}  \n` : "" }---  \n${turndownService.turndown(diffs)}`} actions={
