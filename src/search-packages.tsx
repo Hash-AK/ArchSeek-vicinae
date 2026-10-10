@@ -523,20 +523,25 @@ function ReadPKGBUILD(PKGBUILD:string|null){
 function ReadPKGBUILDDiffs({packageName} : {packageName:string|null} ){
     const {aurCommits:PKGBUILDCommits,isLoading,revalidate,error} = useFetchPKGBUILDCommits(packageName)
     const [selectedCommit, setSelectedCommit] = useState<string>("")
+    const [selectedID, setSelectedID] = useState<number>()
     let diffs = useFetchPKGBUILDDiffs(packageName,selectedCommit)
     return(
-        <Detail markdown={`# ${packageName}  \n### PKGBUILD CHANGES  \n---  \n${turndownService.turndown(diffs)}`} actions={
+        <Detail
+        markdown={`## **${packageName}** | PKGBUILD Changes  \n  ${ selectedID != undefined ?  `\n#### **Title:** ${PKGBUILDCommits[Number(selectedID)].title}  \n#### **Author:** ${PKGBUILDCommits[Number(selectedID)].author.replace(/[\r\n]+/gm,"")}  \n#### **Date:** ${new Date(PKGBUILDCommits[Number(selectedID)].date).toLocaleString()}  \n` : "" }---  \n${turndownService.turndown(diffs)}`} actions={
             <ActionPanel>
                 <ActionPanel.Submenu title="Select commit to compare" icon={Icon.Clock}>
                     {PKGBUILDCommits.map((elementObj,index) =>
-                    <Action title={elementObj.title} icon={Icon.Git} onAction={() => {setSelectedCommit(elementObj.hash)}} key={index}/>
+                    <Action title={elementObj.title} icon={Icon.Git} onAction={() => {
+                        setSelectedCommit(elementObj.hash)
+                        setSelectedID(index)
+                    }} key={index}/>
                     )
                     }
                 </ActionPanel.Submenu>
                 <Action title="Reload commits" onAction={revalidate}/>
 
             </ActionPanel>
-        }/>
+        } />
     )
 }
 // formatBytes taken from https://stackoverflow.com/questions/15900485/correct-way-to-convert-size-in-bytes-to-kb-mb-gb-in-javascript
