@@ -50,5 +50,8 @@
     "@xmldom/xmldom": "^0.9.12",
     "turndown": "^7.2.4",
     "typescript": "^5.9.2"
+  },
+  "overrides": {
+    "@types/react": "19.1.17"
   }
 }

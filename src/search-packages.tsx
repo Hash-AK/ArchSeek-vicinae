@@ -414,11 +414,15 @@ useEffect(()=>{
 },[packageName,hash])
 return diffText
 }
-function ReadPKGBUILD(PKGBUILD:string|null){
-
+function ReadPKGBUILD({packageName}: {packageName:string|null}){
+const {PKGBUILD,isLoading,revalidate,error} = useFetchPKGBUILD(packageName)
     return(
-        <Detail markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}  \n\`\`\`\``} actions={
+        <Detail
+        // @ts-expect-error to remove when PR #2080 merged upstream
+        isLoading={isLoading} 
+        markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}  \n\`\`\`\``} actions={
             <ActionPanel>
+                <Action title="Reload PKGBUILD" onAction={revalidate}/>
             </ActionPanel>
         }/>
     )
@@ -430,7 +434,9 @@ function ReadPKGBUILDDiffs({packageName} : {packageName:string|null} ){
     let diffs = useFetchPKGBUILDDiffs(packageName,selectedCommit)
     
     return(
-        <Detail
+        <Detail 
+        // @ts-expect-error to remove when PR #2080 merged upstream
+        isLoading={isLoading}
         markdown={`## **${packageName}** | PKGBUILD Changes  \n  ${ selectedID != undefined ?  `\n#### **Title:** ${PKGBUILDCommits[Number(selectedID)].title}  \n#### **Author:** ${PKGBUILDCommits[Number(selectedID)].author.replace(/[\r\n]+/gm,"")}  \n#### **Date:** ${new Date(PKGBUILDCommits[Number(selectedID)].date).toLocaleString()}  \n` : "" }---  \n${turndownService.turndown(diffs)}`} actions={
             <ActionPanel>
                 <ActionPanel.Submenu title="Select commit to compare" icon={Icon.Clock}>
@@ -486,7 +492,7 @@ export default function ArchSeek(){
         selectedPackage = ""
     }
     AURPackageInfo = useGetMoreAURInfo(selectedAUR)
-    const {PKGBUILD,isLoading:isLoadingPKGBUILD,revalidate:revalidatePKGBUILD,error:PKGBUILDerror} = useFetchPKGBUILD(selectedPKGBase)
+    
     return(
         <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
@@ -524,7 +530,7 @@ export default function ArchSeek(){
                     <ActionPanel>
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
-                        <Action.Push title="View PKGBUILD" target={ReadPKGBUILD(PKGBUILD)} icon={Icon.NewDocument}/>
+                        <Action.Push title="View PKGBUILD" target={<ReadPKGBUILD packageName={AURPackage.PackageBase} />} icon={Icon.NewDocument}/>
                         <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs packageName={AURPackage.PackageBase} />} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
