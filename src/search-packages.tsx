@@ -244,7 +244,6 @@ function useSearchPackage(searchTerm: string, source: string){
                     toast.title = "Failed to fetch the search results"
                     toast.message = String(response.status)
                     toast.style = Toast.Style.Failure
-                    console.log(response.status +  " " + response.statusText)
                     throw new Error(`Failed to fetch the search page: ${response.status}`)
                 }
                 return response.json()
@@ -312,7 +311,6 @@ function useFetchPKGBUILD(packageName:string|null){
     if (error){
         console.log(`Error: ${error}`)
     }
-    console.log(data)
     return {
         PKGBUILD: data ?? "",
         isLoading,
@@ -338,7 +336,6 @@ function useFetchPKGBUILDCommits(packageName:string|null){
     } 
         let aurCommits : AURCommits[] = []
         if (data){
-        console.log(`Data XML: ${data}`)
         const xmlDoc = new DOMParser().parseFromString(String(data),"text/xml")
         let allEntrylements = xmlDoc.getElementsByTagName("entry")
         for (let i =0; i<allEntrylements.length;i++){  
