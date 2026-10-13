@@ -41,6 +41,18 @@ interface SearchResult {
 	urls: string[];
 }	
 
+interface PageResult {
+	 "parse":{
+		title: string,
+		pageid: number,
+		redirects: string[],
+		"text":{
+			"*" : string
+		}
+
+	}
+}
+
 // Function to get a wiki page from it's title
 function useWikiPage(title:string|undefined){
 let doWeExecute : boolean = true
@@ -50,7 +62,7 @@ if (title == undefined){
 if (title?.length ==0){
 	doWeExecute = false
 }
-const {isLoading,data,revalidate,error} = useFetch<any>(`https://wiki.archlinux.org/api.php?action=parse&page=${encodeURIComponent(title ?? "")}&format=json&prop=text&redirects=1`,{execute:doWeExecute,redirect:'follow',async onError(error){await showToast({title:"Failed to fetch wiki page",style:Toast.Style.Failure,message:String(error)})}, async onData(){await showToast({title:"Wiki page fetched successfully",style:Toast.Style.Success})}})
+const {isLoading,data,revalidate,error} = useFetch<PageResult>(`https://wiki.archlinux.org/api.php?action=parse&page=${encodeURIComponent(title ?? "")}&format=json&prop=text&redirects=1`,{execute:doWeExecute,redirect:'follow',async onError(error){await showToast({title:"Failed to fetch wiki page",style:Toast.Style.Failure,message:String(error)})}, async onData(){await showToast({title:"Wiki page fetched successfully",style:Toast.Style.Success})}})
 let returnData : string|undefined
 if (data){
 	returnData = data?.parse?.text?.["*"]
@@ -165,7 +177,11 @@ export default function ArchSeek() {
 					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="Arch_Linux_logo.svg"/>
 					<Action.Push title="Open in detail" target={
 						// @ts-expect-error to remove at next release when isLoading gets added
-						<Detail isLoading={wikiPageIsLoading} markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)} /> } icon={Icon.AppWindow} />
+						<Detail isLoading={wikiPageIsLoading} markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)} /> } icon={Icon.AppWindow} actions={
+							<ActionPanel>
+								<Action onAction={wikiPageRevalidate} title="Reload page" icon={Icon.ArrowClockwise}/>
+							</ActionPanel>
+						}/>
 				</ActionPanel>
 			}/>
 		) 

@@ -419,7 +419,7 @@ const {PKGBUILD,isLoading,revalidate,error} = useFetchPKGBUILD(packageName)
         isLoading={isLoading} 
         markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}  \n\`\`\`\``} actions={
             <ActionPanel>
-                <Action title="Reload PKGBUILD" onAction={revalidate}/>
+                <Action title="Reload PKGBUILD" onAction={revalidate} icon={Icon.ArrowClockwise}/>
             </ActionPanel>
         }/>
     )
@@ -445,7 +445,7 @@ function ReadPKGBUILDDiffs({packageName} : {packageName:string|null} ){
                     )
                     }
                 </ActionPanel.Submenu>
-                <Action title="Reload commits" onAction={revalidate}/>
+                <Action title="Reload commits" onAction={revalidate} icon={Icon.ArrowClockwise}/>
 
             </ActionPanel>
         } />
