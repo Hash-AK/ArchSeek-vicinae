@@ -95,10 +95,8 @@ function useSearchWikiPage(searchTerm: string){
 		doWeExecute = false
 		
 	}
-	console.log(`doWeExecute? : ${doWeExecute}`)
 	const {isLoading,revalidate,error,data} = useFetch<[string,string[],string[],string[]]>(`https://wiki.archlinux.org/api.php?action=opensearch&search=${encodeURIComponent(searchTerm)}&list=search`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to search pages",message:String(error)})}})
 	if (!Array.isArray(data)){
-		console.log("not an array")
 		wikiText = defaultOuput
 	}
 	if (Array.isArray(data)){
@@ -106,7 +104,6 @@ function useSearchWikiPage(searchTerm: string){
 		wikiText.titles = data[1]
 		wikiText.description = data[2]
 		wikiText.urls = data[3]
-		console.dir(wikiText,{depth:null})
 	} else{
 		wikiText = defaultOuput
 	}
