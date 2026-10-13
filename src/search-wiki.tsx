@@ -177,11 +177,11 @@ export default function ArchSeek() {
 					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="Arch_Linux_logo.svg"/>
 					<Action.Push title="Open in detail" target={
 						// @ts-expect-error to remove at next release when isLoading gets added
-						<Detail isLoading={wikiPageIsLoading} markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)} /> } icon={Icon.AppWindow} actions={
+						<Detail isLoading={wikiPageIsLoading} markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)} actions={
 							<ActionPanel>
 								<Action onAction={wikiPageRevalidate} title="Reload page" icon={Icon.ArrowClockwise}/>
 							</ActionPanel>
-						}/>
+						}/> } icon={Icon.AppWindow}/>
 				</ActionPanel>
 			}/>
 		) 
