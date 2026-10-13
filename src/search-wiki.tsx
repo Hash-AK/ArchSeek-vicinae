@@ -74,84 +74,56 @@ return {
 	error:error
 }
 }
-function useSearchWikiPage(searchTerm: string) {
+
+function useSearchWikiPage(searchTerm: string){
+	const archWikiUrlRegexMarch = searchTerm.match(/^(https:\/\/)?(wiki.archlinux.org\/title\/)(.*)/)
+	if (archWikiUrlRegexMarch){
+			searchTerm=archWikiUrlRegexMarch[3]
+	}
 	const defaultOuput = {} as SearchResult;
 	defaultOuput.query =""
 	defaultOuput.titles = []
 	defaultOuput.description = []
 	defaultOuput.urls = []
-	const [wikiSearch, setWikiSearch] = useState<SearchResult>(defaultOuput)
-
-	useEffect(() => {
-		const controller = new AbortController();
-		if (searchTerm.length == 0){
-			setWikiSearch(defaultOuput)
-			return () => controller.abort()
-		}
-		const timeout = setTimeout(async () =>{
-		// Toast so that user know to wait
-		const toast = await showToast({ title: "Searching...", style: Toast.Style.Animated })
-		const archWikiUrlRegexMarch = searchTerm.match(/^(https:\/\/)?(wiki.archlinux.org\/title\/)(.*)/)
-		// Regex to check if an Arch Wiki url was pasted, if yes only take the title
-
-		if (archWikiUrlRegexMarch){
-			searchTerm=archWikiUrlRegexMarch[3]
-		}
+	let doWeExecute : boolean = true
+	let wikiText: SearchResult = defaultOuput
+	if (searchTerm.length == 0 ){
+		doWeExecute = false
 		
-		let urlEncodedSearchTerm = encodeURIComponent(searchTerm)
-		fetch(`https://wiki.archlinux.org/api.php?action=opensearch&search=${urlEncodedSearchTerm}&list=search`,{signal: controller.signal}).then((response) => {
-			if (!response.ok){
-				//Let the user know that an error occured
-				toast.title = "Failed to fetch the search results"
-				toast.message = String(response.status)
-				toast.style = Toast.Style.Failure
-				throw new Error(`Failed to fetch the search page: ${response.status}`);
-			}
-			
-			return response.json()
-		}).then((data) => {
-			//small bandaid so that the code doesn't implode if non-normal query is sent
-			if (!Array.isArray(data)){
-				// let the user know that they inputed a weird thing that broke
-				toast.title = "Unrecognized output"
-				toast.message = "Perhaps your query was invalid"
-				toast.style = Toast.Style.Failure
-				return
-			}
-			let typedData = data as [string,string[],string[],string[]]
-			const searchResult = {} as SearchResult;
-			searchResult.query = typedData[0]
-			searchResult.titles = typedData[1]
-			searchResult.description = typedData[2]
-			searchResult.urls = typedData[3]
-			setWikiSearch(searchResult)
-			toast.style = Toast.Style.Success;
-            toast.title = "Search complete";
-		}).catch((error)=>{
-			if(controller.signal.aborted){
-				return
-
-			}
-			//todo catch errors sob
-		})
-		},200)
-		return() => {
-			clearTimeout(timeout)
-			controller.abort()
-		}
-	},[searchTerm])
-	
-	return wikiSearch
+	}
+	if (searchTerm == ""){
+		doWeExecute = false
+		
+	}
+	console.log(`doWeExecute? : ${doWeExecute}`)
+	const {isLoading,revalidate,error,data} = useFetch<[string,string[],string[],string[]]>(`https://wiki.archlinux.org/api.php?action=opensearch&search=${encodeURIComponent(searchTerm)}&list=search`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to search pages",message:String(error)})}})
+	if (!Array.isArray(data)){
+		console.log("not an array")
+		wikiText = defaultOuput
+	}
+	if (Array.isArray(data)){
+		wikiText.query = data[0]
+		wikiText.titles = data[1]
+		wikiText.description = data[2]
+		wikiText.urls = data[3]
+		console.dir(wikiText,{depth:null})
+	} else{
+		wikiText = defaultOuput
+	}
+	return {
+		wikiText:wikiText,
+		isLoading: isLoading,
+		revalidate:revalidate,
+		error:error
+	}
 
 }
-
 export default function ArchSeek() {
 	const [query, setQuery] = useState("");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	let selectedTitle
-	let wikiText = {} as SearchResult;
 
-	wikiText = useSearchWikiPage(query)
+	const {wikiText:wikiText,isLoading:wikiTextIsLoading} = useSearchWikiPage(query)
 	if (selectedId != null){
 		// safety check
 		if (Number(selectedId) < wikiText.titles.length) {
@@ -164,7 +136,7 @@ export default function ArchSeek() {
 	const {wikiPage,isLoading:wikiPageIsLoading,revalidate:wikiPageRevalidate,error:WikiPageError} = useWikiPage(selectedTitle)
 
     return(
-        <List isLoading={wikiPageIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
+        <List isLoading={wikiPageIsLoading||wikiTextIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
 			{query === "" && wikiText.titles.length === 0 ? (
 				<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
 ) : (
