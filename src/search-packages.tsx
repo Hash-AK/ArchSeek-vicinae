@@ -338,53 +338,38 @@ function useFetchPKGBUILDCommits(packageName:string|null){
 }
 
 function useFetchPKGBUILDDiffs(packageName:string|null,hash:string|null){
-const [diffText,setDiffText] = useState<string>("Select a commit to start.")
-useEffect(()=>{
-    (async() =>{
-    setDiffText("")
-    const controller = new AbortController()
+    let doWeExecute: boolean = true
+    let diffText : string = "Select a commit to start."
     if (packageName == null || hash == null){
-        setDiffText("Select a commit to start.")
-        return () => controller.abort()
+        doWeExecute = false
+        packageName = ""
+        diffText = "Select a commit to start."
+
     }
-    if (packageName.length == 0 || hash.length == 0){
-        setDiffText("Select a commit to start.")
-        return () => controller.abort()
+    if (packageName?.length == 0){
+        doWeExecute = false
+        packageName = ""
+        diffText = "Select a commit to start."
     }
-    const hashRegex = hash?.match(/^urn:sha\d*:(.*)/)
+    let hashRegex = hash?.match(/^urn:sha\d*:(.*)/)
     if (hashRegex == null){
-        setDiffText("Select a commit to start.")
-        return () => controller.abort()
+        doWeExecute = false
+        packageName = ""
+        diffText = "Select a commit to start."
+        
     }
-    const toast = await showToast({title: "Fetching diffs",style: Toast.Style.Animated})
-    const urlEncodedPackageName = encodeURIComponent(packageName)
-    fetch(`https://aur.archlinux.org/cgit/aur.git/commit/?h=${urlEncodedPackageName}&id=${hashRegex[1]}`,{signal:controller.signal}).then((response)=>{
-        if(!response.ok){
-            toast.style = Toast.Style.Failure
-            toast.title = "Failed to fetch diffs"
-            throw new Error(`Failed to fetch diff: ${response.status}`)
-        }
-        return response.text()
-    }).then((data)=>{
+    const {data,isLoading,error,revalidate} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/commit/?h=${encodeURIComponent(packageName)}&id=${hashRegex?.[1]}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch diffs",message:String(error)})},async onData(){await showToast({style:Toast.Style.Success,title:"Diffs fetched!"})}}) 
+    if (data){
         const htmlDoc = new DOMParser().parseFromString(data,'text/html')
         let diffObj = htmlDoc.getElementsByClassName("diff").toString()
-        toast.style = Toast.Style.Success
-        toast.title = "Diffs fetched!"
-        setDiffText(diffObj)
-    }).catch((error)=>{
-        if(controller.signal.aborted){
-            return
-        }
-        toast.style = Toast.Style.Failure
-        toast.title = "Failed to fetch diffs"
-        console.log(`Failed to fetch diff: ${error}`)
-    })
-    return () => {
-        controller.abort()
+        diffText = diffObj
     }
-})()
-},[packageName,hash])
-return diffText
+    return{
+        diffs:diffText,
+        isLoading:isLoading,
+        error:error,
+        revalidate:revalidate
+    }
 }
 function ReadPKGBUILD({packageName}: {packageName:string|null}){
 const {PKGBUILD,isLoading,revalidate,error} = useFetchPKGBUILD(packageName)
@@ -400,15 +385,15 @@ const {PKGBUILD,isLoading,revalidate,error} = useFetchPKGBUILD(packageName)
     )
 }
 function ReadPKGBUILDDiffs({packageName} : {packageName:string|null} ){
-    const {aurCommits:PKGBUILDCommits,isLoading,revalidate,error} = useFetchPKGBUILDCommits(packageName)
+    const {aurCommits:PKGBUILDCommits,isLoading:PKGBUILDCommitsIsLoading,revalidate,error} = useFetchPKGBUILDCommits(packageName)
     const [selectedCommit, setSelectedCommit] = useState<string>("")
     const [selectedID, setSelectedID] = useState<number>()
-    let diffs = useFetchPKGBUILDDiffs(packageName,selectedCommit)
+    const {diffs,isLoading:diffsIsLoading,error:diffsError,revalidate:diffsRevalidate} = useFetchPKGBUILDDiffs(packageName,selectedCommit)
     
     return(
         <Detail 
         // @ts-expect-error to remove at next release when isLoading gets added
-        isLoading={isLoading}
+        isLoading={(PKGBUILDCommitsIsLoading || (diffsIsLoading && selectedID != undefined))}
         markdown={`## **${packageName}** | PKGBUILD Changes  \n  ${ selectedID != undefined ?  `\n#### **Title:** ${PKGBUILDCommits[Number(selectedID)].title}  \n#### **Author:** ${PKGBUILDCommits[Number(selectedID)].author.replace(/[\r\n]+/gm,"")}  \n#### **Date:** ${new Date(PKGBUILDCommits[Number(selectedID)].date).toLocaleString()}  \n` : "" }---  \n${turndownService.turndown(diffs)}`} actions={
             <ActionPanel>
                 <ActionPanel.Submenu title="Select commit to compare" icon={Icon.Clock}>
@@ -464,7 +449,7 @@ export default function ArchSeek(){
     const {AURPackageInfo,isLoading:AURPackageInfoIsLoading,revalidate:AURPackageInfoRevalidate} = useGetMoreAURInfo(selectedAUR)
     
     return(
-        <List isLoading={AURPackageInfoIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
+        <List throttle={true} isLoading={AURPackageInfoIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
             <List.Dropdown.Item title="AUR" value="AUR"/>
             <List.Dropdown.Item title="Official repos only" value="Official"/>

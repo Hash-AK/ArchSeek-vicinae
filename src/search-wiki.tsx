@@ -133,7 +133,7 @@ export default function ArchSeek() {
 	const {wikiPage,isLoading:wikiPageIsLoading,revalidate:wikiPageRevalidate,error:WikiPageError} = useWikiPage(selectedTitle)
 
     return(
-        <List isLoading={wikiPageIsLoading||wikiTextIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
+        <List throttle={true} isLoading={wikiPageIsLoading||wikiTextIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
 			{query === "" && wikiText.titles.length === 0 ? (
 				<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
 ) : (
