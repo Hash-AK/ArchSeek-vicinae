@@ -380,23 +380,18 @@ export default function ArchSeek(){
     let selectedAUR: string| null = null
     const {searchResults,AURIsLoading,OfficialIsLoading} = useSearchPackage(query, sourceDropdown)
     if (selectedId != null){
-        if (Number(selectedId.slice(4)) < searchResults.AURResults.length && sourceDropdown == "AUR" || Number(selectedId.slice(4)) < searchResults.officialResults.length && sourceDropdown == "Official" || Number(selectedId.slice(4)) < (searchResults.officialResults.length + searchResults.AURResults.length) && sourceDropdown == "All"){
-            if(sourceDropdown == "AUR"){
+        if (selectedId.slice(0,4) == 'AUR-'){
+            if(Number(selectedId.slice(4)) < searchResults.AURResults.length){
                 selectedPackage = searchResults.AURResults[Number(selectedId.slice(4))].Name
                 selectedPKGBase = searchResults.AURResults[Number(selectedId.slice(4))].PackageBase
                 selectedAUR = selectedPackage
-            } else if (sourceDropdown == "Official"){
-                selectedPackage = searchResults.officialResults[Number(selectedId.slice(4))].pkgname
-            } else{
-                if (selectedId.slice(0,4) == 'AUR-'){
-                    selectedPackage = searchResults.AURResults[Number(selectedId.slice(4))].Name
-                    selectedPKGBase = searchResults.AURResults[Number(selectedId.slice(4))].PackageBase
-                    selectedAUR = selectedPackage
-                } else if (selectedId.slice(0,4) == 'OFF-'){
+            } }
+            else if (selectedId.slice(0,4) == "OFF-"){
+                if(Number(selectedId.slice(4)) < searchResults.officialResults.length){
                     selectedPackage = searchResults.officialResults[Number(selectedId.slice(4))].pkgname
                 }
             }
-        } 
+        
     } else {
         selectedPackage = ""
     }
