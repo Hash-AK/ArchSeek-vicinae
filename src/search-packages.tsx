@@ -167,49 +167,24 @@ turndownService.addRule('head',{
             return '**' + content + '**  \n'
     }
 })
-function useGetMoreAURInfo(packageName: string|null){
-    const [info,setInfo] = useState<AURPackageMoreInfoDescription>(defaultAurMoreInfoDescription)
-    useEffect(() => {
-    setInfo(defaultAurMoreInfoDescription)
-    const controller = new AbortController();
+function useGetMoreAURInfo(packageName : string|null){
+    let doWeExecute : boolean = true
     if (packageName == null){
-        return () => controller.abort()
+        doWeExecute = false
+        packageName = ""
     }
-    if (packageName.length == 0){
-        return () => controller.abort()
+    if (packageName?.length == 0){
+        doWeExecute = false
+        packageName = ""
     }
-
-    (async() =>{
-    const toast = await showToast({ title: "Fetching package info...", style: Toast.Style.Animated})
-    let urlEncodedName = encodeURIComponent(packageName)
-    fetch(`https://aur.archlinux.org/rpc/v5/info?arg[]=${urlEncodedName}`,{signal: controller.signal}).then((response) =>{
-        if(!response.ok){
-            toast.title = "Failed to fetch package info"
-            toast.message = String(response.status)
-            toast.style = Toast.Style.Failure
-            throw new Error(`Failed to fetch the page: ${response.status}`)
-        }
-        return response.json()
-    }).then((data) =>{
-        let typedData = data as AURPackageMoreInfoResult
-        let results = typedData.results[0] as AURPackageMoreInfoDescription
-        setInfo(results)
-        toast.style = Toast.Style.Success
-        toast.title = "Package info fetched!"
-    }).catch((error)=>{
-        if(controller.signal.aborted){
-            return
-        }
-        toast.style = Toast.Style.Failure
-        toast.title = "Failed to fetch package info"
-        console.log(`Failed to fetch package info: ${error}`)
-    })
-    })()
-    return () => {
-        controller.abort()
+    const {data,isLoading,error,revalidate} = useFetch<AURPackageMoreInfoDescription>(`https://aur.archlinux.org/rpc/v5/info?arg[]=${encodeURIComponent(packageName)}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch AUR package description",message:String(error)})},async onData(){await showToast({style:Toast.Style.Success,title:"Package info fetched!"})}})
+    
+    return {
+        AURPackageInfo: data ?? defaultAurMoreInfoDescription,
+        revalidate:revalidate,
+        isLoading:isLoading,
+        error:error
     }
-    },[packageName])
-    return info
 }
 function useSearchPackage(searchTerm: string, source: string){
     const [packageSearch, setPackageSearch] = useState<SearchState>(defaultOutput)
@@ -471,9 +446,7 @@ export default function ArchSeek(){
 
     let selectedPackage: string| null = null
     let selectedPKGBase: string | null = null
-    let selectedAUR: string| null =null
-    let AURPackageInfo: AURPackageMoreInfoDescription = defaultAurMoreInfoDescription
-
+    let selectedAUR: string| null = null
     let testText = useSearchPackage(query, sourceDropdown)
     if (selectedId != null){
         if (Number(selectedId) < testText.AURResults.length && sourceDropdown == "AUR" || Number(selectedId) < testText.officialResults.length && sourceDropdown == "Official"){
@@ -488,10 +461,10 @@ export default function ArchSeek(){
     } else {
         selectedPackage = ""
     }
-    AURPackageInfo = useGetMoreAURInfo(selectedAUR)
+    const {AURPackageInfo,isLoading:AURPackageInfoIsLoading,revalidate:AURPackageInfoRevalidate} = useGetMoreAURInfo(selectedAUR)
     
     return(
-        <List searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
+        <List isLoading={AURPackageInfoIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
             <List.Dropdown.Item title="AUR" value="AUR"/>
             <List.Dropdown.Item title="Official repos only" value="Official"/>
@@ -531,6 +504,7 @@ export default function ArchSeek(){
                         <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs packageName={AURPackage.PackageBase} />} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
+                        <Action title="Reload package informations" onAction={AURPackageInfoRevalidate} icon={Icon.ArrowClockwise}/>
                     </ActionPanel>
                 }/>
                 
