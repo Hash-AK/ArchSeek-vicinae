@@ -42,54 +42,6 @@ interface SearchResult {
 }	
 
 // Function to get a wiki page from it's title
-/*function useWikiPage(title:any){
-	// safety url encoding
-	let urlEncodedTitle = encodeURIComponent(title)
-	// React thing to show while waiting for actual results
-	const [wikiText, setWikiText] = useState<string>("Loading content...")
-	
-	useEffect(() => {
-		const controller = new AbortController();
-		//safety checks
-		if (title == null) {
-			return () => controller.abort()
-		}
-		if (title.length == 0 ){
-			return () => controller.abort()
-		}
-		(async() =>{
-		// Toastytoast
-		const toast = await showToast({ title: "Fetching...", style: Toast.Style.Animated })
-		//actual fetch command, follow both HTTP redirect and Mediawiki page redirects
-		fetch(`https://wiki.archlinux.org/api.php?action=parse&page=${urlEncodedTitle}&format=json&prop=text&redirects=1`,{redirect: 'follow',signal: controller.signal}).then((response) => {
-			if (!response.ok) {
-				toast.title = "Failed to fetch wiki's page"
-				toast.message = String(response.status)
-				toast.style = Toast.Style.Failure
-				throw new Error(`Failed to fetch the page: ${response.status}`);
-			}
-			// return the response's as json
-			return response.json();
-		}).then((data: any) => {
-			//only parse the html in itself
-			setWikiText(data.parse.text["*"])
-			toast.title = "Page fetched!"
-			toast.style = Toast.Style.Success
-		}).catch((error)=>{
-			if (controller.signal.aborted){
-				return
-			}
-			//Todo catch errors
-		})
-		})()
-		return () =>{
-			controller.abort()
-		}
-	// this make sure it only runs if the title change
-	},[title])
-	return wikiText
-}
-*/
 function useWikiPage(title:string|undefined){
 let doWeExecute : boolean = true
 if (title == undefined){
@@ -212,7 +164,7 @@ export default function ArchSeek() {
 					<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} icon={Icon.CopyClipboard}/>
 					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="Arch_Linux_logo.svg"/>
 					<Action.Push title="Open in detail" target={
-						// @ts-expect-error
+						// @ts-expect-error to remove at next release when isLoading gets added
 						<Detail isLoading={wikiPageIsLoading} markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)} /> } icon={Icon.AppWindow} />
 				</ActionPanel>
 			}/>

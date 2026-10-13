@@ -415,7 +415,7 @@ function ReadPKGBUILD({packageName}: {packageName:string|null}){
 const {PKGBUILD,isLoading,revalidate,error} = useFetchPKGBUILD(packageName)
     return(
         <Detail
-        // @ts-expect-error to remove when PR #2080 merged upstream
+        // @ts-expect-error to remove at next release when isLoading gets added
         isLoading={isLoading} 
         markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}  \n\`\`\`\``} actions={
             <ActionPanel>
@@ -432,7 +432,7 @@ function ReadPKGBUILDDiffs({packageName} : {packageName:string|null} ){
     
     return(
         <Detail 
-        // @ts-expect-error to remove when PR #2080 merged upstream
+        // @ts-expect-error to remove at next release when isLoading gets added
         isLoading={isLoading}
         markdown={`## **${packageName}** | PKGBUILD Changes  \n  ${ selectedID != undefined ?  `\n#### **Title:** ${PKGBUILDCommits[Number(selectedID)].title}  \n#### **Author:** ${PKGBUILDCommits[Number(selectedID)].author.replace(/[\r\n]+/gm,"")}  \n#### **Date:** ${new Date(PKGBUILDCommits[Number(selectedID)].date).toLocaleString()}  \n` : "" }---  \n${turndownService.turndown(diffs)}`} actions={
             <ActionPanel>
