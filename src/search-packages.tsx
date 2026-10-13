@@ -177,10 +177,10 @@ function useGetMoreAURInfo(packageName : string|null){
         doWeExecute = false
         packageName = ""
     }
-    const {data,isLoading,error,revalidate} = useFetch<AURPackageMoreInfoDescription>(`https://aur.archlinux.org/rpc/v5/info?arg[]=${encodeURIComponent(packageName)}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch AUR package description",message:String(error)})},async onData(){await showToast({style:Toast.Style.Success,title:"Package info fetched!"})}})
+    const {data,isLoading,error,revalidate} = useFetch<AURPackageMoreInfoResult>(`https://aur.archlinux.org/rpc/v5/info?arg[]=${encodeURIComponent(packageName)}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch AUR package description",message:String(error)})},async onData(){await showToast({style:Toast.Style.Success,title:"Package info fetched!"})}})
     
     return {
-        AURPackageInfo: data ?? defaultAurMoreInfoDescription,
+        AURPackageInfo: data?.results[0] ?? defaultAurMoreInfoDescription,
         revalidate:revalidate,
         isLoading:isLoading,
         error:error
