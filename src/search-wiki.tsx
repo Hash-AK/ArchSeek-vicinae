@@ -119,7 +119,9 @@ export default function ArchSeek() {
 	const [query, setQuery] = useState("");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	let selectedTitle
-
+	useEffect(() =>{
+        setSelectedId(null)
+	},[query])
 	const {wikiText:wikiText,isLoading:wikiTextIsLoading} = useSearchWikiPage(query)
 	if (selectedId != null){
 		// safety check

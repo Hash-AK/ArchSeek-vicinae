@@ -122,7 +122,6 @@ interface AURCommits{
     author: string
 }
 const defaultAurMoreInfoDescription = {CoMaintainers: [""],Conflicts: [""],Depends:[""],Description: "",FirstSubmitted:0,ID:0,Keywords:[""],LastModified:0,License:[""],Maintainer:"",MakeDepends:[""],Name:"",NumVotes:0,OutOfDate:null,PackageBase:"",PackageBaseID:0,Popularity:0,Provides:[""],Submitter:"",URL:"",URLPath:"",Version:""} as AURPackageMoreInfoDescription
-const defaultOutput = {officialResults: [],AURResults: []} as SearchState
 const prefs = getPreferenceValues<Preferences>();
 // Turndownservice initialisation (to be able to transform html to markdown)
 var turndownService = new TurndownService({codeBlockStyle: `fenced`})
@@ -186,93 +185,40 @@ function useGetMoreAURInfo(packageName : string|null){
         error:error
     }
 }
+
 function useSearchPackage(searchTerm: string, source: string){
-    const [packageSearch, setPackageSearch] = useState<SearchState>(defaultOutput)
-        useEffect(() => {
-        const controller = new AbortController();
-        if(searchTerm.length==0){
-            setPackageSearch(defaultOutput)
-            return () => controller.abort()
-        }
+    let doWeExecuteAUR: boolean = false
+    let doWeExecuteOfficial: boolean = false
+    let searchResults = {officialResults: [],AURResults: []} as SearchState
+    if (source == "AUR" || source == "All"){
+        doWeExecuteAUR = true
+    }
+    if (source == "Official" || source == "All"){
+        doWeExecuteOfficial = true
+    }
+    if(searchTerm == null){
+        doWeExecuteAUR = false
+        doWeExecuteOfficial = false
+    }
+    if (searchTerm.length == 0){
+        doWeExecuteAUR = false
+        doWeExecuteOfficial = false
+    }
+    if (searchTerm.length < 2){
+        doWeExecuteAUR = false
+    }
 
-        const timeout = setTimeout(async ()=>{
-        const toast = await showToast({ title: "Searching...", style: Toast.Style.Animated })
-         /*   
-        if(source == "All"){
-            toast.hide()
-            return
-        }
-        */
-       
-        if (source == "AUR"){
-            //Aurweb rpc limitation
-            if (searchTerm.length < 2 ){
-                toast.title = "Your query must be at least 2 characters long"
-                toast.style = Toast.Style.Failure
-                setPackageSearch(defaultOutput)
-                return () => controller.abort()
-    
-            }
-            let urlEncodedSearchTerm = encodeURIComponent(searchTerm)
-            fetch(`https://aur.archlinux.org/rpc/v5/search/${urlEncodedSearchTerm}`, {signal: controller.signal}).then((response)=> {
-                if (!response.ok){
-                    toast.title = "Failed to fetch the search results"
-                    toast.message = String(response.status)
-                    toast.style = Toast.Style.Failure
-                    throw new Error(`Failed to fetch the search page: ${response.status}`)
-                }
-                return response.json()
-            }).then((data)=> {
-                let typedData = data as AURSearchResult
-                setPackageSearch({officialResults:[], AURResults: typedData.results})
-                toast.style = Toast.Style.Success;
-                toast.title = "Search complete";
-            }).catch((error)=>{
-                if(controller.signal.aborted){
-                    return;
-                }
-                console.log(`An error occured: ${String(error)}`)
-                toast.style = Toast.Style.Failure
-                toast.title = "An error occured"
-                toast.message = String(error)
-            })
-        }
-        else if (source == "Official"){
-            let urlEncodedSearchTerm = encodeURIComponent(searchTerm)
-            fetch(`https://archlinux.org/packages/search/json/?q=${urlEncodedSearchTerm}`, {signal: controller.signal}).then((response)=>{
-                if (!response.ok){
-                    toast.title = "Failed to fetch the search results"
-                    toast.message = String(response.status)
-                    toast.style = Toast.Style.Failure
-                    throw new Error(`Failed to fetch the search page: ${response.status}`)
-                }
-                return response.json()
-            }).then((data) => {
-                let typedData = data as PackageSearchResult
-                setPackageSearch({officialResults: typedData.results,AURResults:[]})
-                toast.style = Toast.Style.Success;
-                toast.title = "Search complete";
-            }).catch((error)=>{
-                if(controller.signal.aborted){
-                    return;
-                }
-                console.log(`An error occured: ${String(error)}`)
-                toast.style = Toast.Style.Failure
-                toast.title = "An error occured"
-                toast.message = String(error)
-            })
-        } 
+    const {data:AURData,error:AURError,isLoading:AURIsLoading,revalidate:AURRevalidate} = useFetch<AURSearchResult>(`https://aur.archlinux.org/rpc/v5/search/${encodeURIComponent(searchTerm)}`,{execute:doWeExecuteAUR,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch the search results",message:String(error)})},async onData(){await showToast({style:Toast.Style.Success,title:"Search complete"})}})
+    // set to blank if no results
+    searchResults.AURResults = AURData?.results ?? [] 
+    const {data:OfficialData,error:OfficialError,isLoading:OfficialIsLoading,revalidate:OfficialRevalidate} = useFetch<PackageSearchResult>(`https://archlinux.org/packages/search/json/?q=${encodeURIComponent(searchTerm)}`,{execute:doWeExecuteOfficial,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch the search results",message:String(error)})},async onData(){await showToast({style:Toast.Style.Success,title:"Search complete"})}})
+    searchResults.officialResults = OfficialData?.results ?? []
+    return {
+        searchResults,
+        AURIsLoading,
+        OfficialIsLoading
+    }
 
-        },400)
-        return() => {
-            clearTimeout(timeout)
-            controller.abort()
-        }
-
-    },[searchTerm,source])
-
-
-    return packageSearch
 }
 function useFetchPKGBUILD(packageName:string|null){
     let doWeExecute : boolean = true
@@ -422,7 +368,7 @@ function formatBytes(bytes: number){
 }
 export default function ArchSeek(){
     const [query, setQuery] = useState("");
-    const [sourceDropdown,setSourceDropdown] = useState("Official")
+    const [sourceDropdown,setSourceDropdown] = useState("All")
     const [selectedId, setSelectedId] = useState<string | null>(null);
     // Make sure to reset ID if results changes
     useEffect(() =>{
@@ -432,15 +378,23 @@ export default function ArchSeek(){
     let selectedPackage: string| null = null
     let selectedPKGBase: string | null = null
     let selectedAUR: string| null = null
-    let testText = useSearchPackage(query, sourceDropdown)
+    const {searchResults,AURIsLoading,OfficialIsLoading} = useSearchPackage(query, sourceDropdown)
     if (selectedId != null){
-        if (Number(selectedId) < testText.AURResults.length && sourceDropdown == "AUR" || Number(selectedId) < testText.officialResults.length && sourceDropdown == "Official"){
+        if (Number(selectedId.slice(4)) < searchResults.AURResults.length && sourceDropdown == "AUR" || Number(selectedId.slice(4)) < searchResults.officialResults.length && sourceDropdown == "Official" || Number(selectedId.slice(4)) < (searchResults.officialResults.length + searchResults.AURResults.length) && sourceDropdown == "All"){
             if(sourceDropdown == "AUR"){
-                selectedPackage = testText.AURResults[Number(selectedId)].Name
-                selectedPKGBase = testText.AURResults[Number(selectedId)].PackageBase
+                selectedPackage = searchResults.AURResults[Number(selectedId.slice(4))].Name
+                selectedPKGBase = searchResults.AURResults[Number(selectedId.slice(4))].PackageBase
                 selectedAUR = selectedPackage
             } else if (sourceDropdown == "Official"){
-                selectedPackage = testText.officialResults[Number(selectedId)].pkgname
+                selectedPackage = searchResults.officialResults[Number(selectedId.slice(4))].pkgname
+            } else{
+                if (selectedId.slice(0,4) == 'AUR-'){
+                    selectedPackage = searchResults.AURResults[Number(selectedId.slice(4))].Name
+                    selectedPKGBase = searchResults.AURResults[Number(selectedId.slice(4))].PackageBase
+                    selectedAUR = selectedPackage
+                } else if (selectedId.slice(0,4) == 'OFF-'){
+                    selectedPackage = searchResults.officialResults[Number(selectedId.slice(4))].pkgname
+                }
             }
         } 
     } else {
@@ -449,8 +403,9 @@ export default function ArchSeek(){
     const {AURPackageInfo,isLoading:AURPackageInfoIsLoading,revalidate:AURPackageInfoRevalidate} = useGetMoreAURInfo(selectedAUR)
     
     return(
-        <List throttle={true} isLoading={AURPackageInfoIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
+        <List throttle={true} isLoading={AURIsLoading||OfficialIsLoading||AURPackageInfoIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
+            <List.Dropdown.Item title="All" value="All"/>
             <List.Dropdown.Item title="AUR" value="AUR"/>
             <List.Dropdown.Item title="Official repos only" value="Official"/>
         </List.Dropdown>
@@ -459,8 +414,8 @@ export default function ArchSeek(){
                 <List.EmptyView title="No Package Found" description="Try to search something else." icon={{source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}}/>
             ) : (
                 <>
-                {testText.officialResults.map((officialPackage,index) =>
-                <List.Item id={String(index)} title={officialPackage.pkgname} key={`${officialPackage.pkgname}-${officialPackage.repo}-${officialPackage.arch}`} icon="Arch_Linux_logo.svg" detail={
+                {searchResults.officialResults.map((officialPackage,index) =>
+                <List.Item id={String('OFF-' + index)} title={officialPackage.pkgname} key={`${officialPackage.pkgname}-${officialPackage.repo}-${officialPackage.arch}`} icon="Arch_Linux_logo.svg" detail={
                     <List.Item.Detail markdown={`# ${officialPackage.pkgname}  \n**Architecture:** ${officialPackage.arch}  \n**Repository:** ${officialPackage.repo}  \n**Description:** ${officialPackage.pkgdesc}  \n**Upstream URL:** ${officialPackage.url}  \n**License(s):** ${Array.isArray(officialPackage.licenses) && (officialPackage.licenses?.length) > 0 ? `${officialPackage.licenses.toString()}  \n` : ""}**Maintainers:** ${officialPackage.maintainers}  \n**Package Size:** ${formatBytes(officialPackage.compressed_size)}  \n**Installed Size:** ${formatBytes(officialPackage.installed_size)}  \n**Last Packager:** ${officialPackage.packager}  \n**Build Date:** ${new Date(officialPackage.build_date).toLocaleString()}  \n**Last Updated:** ${new Date(officialPackage.last_update).toLocaleString()}  \n${typeof officialPackage.flag_date === 'string' && officialPackage.flag_date?.length > 0 ? `<span style="color:red">_**Flagged out-of-date on:** ${new Date(officialPackage.flag_date).toLocaleDateString()}</span>_`:""}`}/>
                 } accessories={[
                     { tag: {value: `${officialPackage.repo}`,color: Color.Yellow}},
@@ -476,8 +431,8 @@ export default function ArchSeek(){
                 }/>
 
                 )}
-                {testText.AURResults.map((AURPackage,index) => 
-                <List.Item id={String(index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
+                {searchResults.AURResults.map((AURPackage,index) => 
+                <List.Item id={String('AUR-' + index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
                     <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Provides)&& (AURPackageInfo?.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo?.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? ` (${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${new Date(AURPackage.FirstSubmitted * 1000).toLocaleString()}  \n**Last Updated:** ${new Date(AURPackage.LastModified * 1000).toLocaleString()} ${(typeof AURPackageInfo.OutOfDate === 'number') ? `  \n<span style="color:red">_**Flagged out-of-date**(${new Date(AURPackageInfo.OutOfDate * 1000).toLocaleDateString()})</span>_` : ""}`}/>
                 } accessories={[
                     { tag: { value: "AUR", color: Color.Green}}
