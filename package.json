@@ -19,7 +19,7 @@
     {
       "name": "search-packages",
       "title": "Search Packages",
-      "description": "Search packages from official repsositories and the AUR from Vicinae",
+      "description": "Search packages from official repositories and the AUR from Vicinae",
       "mode": "view"
     }
   ],
