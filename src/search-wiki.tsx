@@ -101,7 +101,7 @@ if (title?.length ==0){
 const {isLoading,data,revalidate,error} = useFetch<any>(`https://wiki.archlinux.org/api.php?action=parse&page=${encodeURIComponent(title ?? "")}&format=json&prop=text&redirects=1`,{execute:doWeExecute,redirect:'follow',async onError(error){await showToast({title:"Failed to fetch wiki page",style:Toast.Style.Failure,message:String(error)})}, async onData(){await showToast({title:"Wiki page fetched successfully",style:Toast.Style.Success})}})
 let returnData : string|undefined
 if (data){
-	returnData = data.parse.text["*"]
+	returnData = data?.parse?.text?.["*"]
 }
 return {
 	wikiPage:returnData ?? "",
