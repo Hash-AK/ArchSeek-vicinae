@@ -1,11 +1,18 @@
 # ArchSeek Vicinae Extension
 Welcome to the ArchSeek vicinae extension!
 
-This is an extension for the [vicinae launcher](https://github.com/vicinaehq/vicinae). It allows you to quickly query the Arch Wiki and read wiki pages directly from Vicinae! You can also search packages, both from official repos and the AUR, and even see the PKGBUILD.
+This is an extension for the [vicinae launcher](https://github.com/vicinaehq/vicinae). It allows you to quickly query the Arch Wiki and read wiki pages directly from Vicinae! You can also search packages, both from official repos and the AUR, see their PKGBUILD, and even see the most recent commits/changes!
 
 If you prefer to read the page in your browser, there's an action for that, too.
 
-An Arch/CachyOS/AUR package search ability is currently in progress.
+## Usage
+
+This extension has two commands: Search Wiki, which as the name implies, allow to search articles on the Arch Wiki, and Search Package, which let you search packages both in the Arch packages repositories and the AUR. You can filter for both, or either of those, and have actions, like seeing recent PKGBUILD changes, reading the current PKGBUILD, and install the package on your system.
+
+
+## Settings
+
+Currently, ArchSeek provides only one setting, which is the path to the AUR helper you want to use when installing an AUR package from the action menu.
 
 ## Installation
 As this extension is currently a work in progress, it is not yet shared in the Vicinae extension store. If you want to run it in your system, you need to do the following:
@@ -32,4 +39,4 @@ You can even kill the process afterward
 5) Now in Vicinae you should see "ArchSeek"!
 
 ## AI Disclosure
-During this project, I sometimes used AI to debug/help me find solutions for bugs that where occurring.
+During this project, I sometimes used AI to debug/help me find solutions for bugs that where occurring. No code was directly taken from AI, thought.
