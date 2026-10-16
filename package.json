@@ -27,9 +27,18 @@
     {
       "name": "aur-helper",
       "title": "AUR Helper",
-      "description": "Path to the AUR helper that will be used to install AUR packages",
+      "description": "Path to the AUR helper that will be used to install AUR packages.",
       "type": "textfield",
       "default": "/usr/bin/yay",
+      "required": true
+    },
+    {
+      "name":"run-probe",
+      "title": "Run Package Database Probing",
+      "label": "Run Probe",
+      "description": "If enabled, this will probe your currently installed package list to verify if the selected package is installed or not.",
+      "type": "checkbox",
+      "default": false,
       "required": true
     }
   ],

@@ -16,9 +16,11 @@ import {
 	useState
 } from 'react';
 import { DOMParser } from '@xmldom/xmldom'
-import { useFetch } from '@raycast/utils'
+import { useFetch,useExec } from '@raycast/utils'
 interface Preferences {
     "aur-helper": string;
+    "run-probe": boolean;
+    
 }
 interface PackageDescription{
     pkgname: string
@@ -326,6 +328,7 @@ const {PKGBUILD,isLoading,revalidate,error} = useFetchPKGBUILD(packageName)
         markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}  \n\`\`\`\``} actions={
             <ActionPanel>
                 <Action title="Reload PKGBUILD" onAction={revalidate} icon={Icon.ArrowClockwise}/>
+                <Action.CopyToClipboard title="Copy PKGBUILD" content={PKGBUILD} icon={Icon.CopyClipboard}/>
             </ActionPanel>
         }/>
     )
@@ -443,6 +446,7 @@ export default function ArchSeek(){
                     { tag: {value: "Arch Repos",color: Color.SecondaryText}}
                 ]} actions={
                     <ActionPanel>
+                        <Action.CopyToClipboard title="Copy package name" content={officialPackage.pkgname} icon={Icon.CopyClipboard}/>
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;sudo pacman -S --needed ${officialPackage.pkgname}`]} options={{hold:true}}/>
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon="Arch_Linux_logo.svg"/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={officialPackage.url} icon={Icon.CopyClipboard}/>
@@ -458,6 +462,7 @@ export default function ArchSeek(){
                     { tag: { value: "AUR", color: Color.Green}}
                 ]} actions={
                     <ActionPanel>
+                        <Action.CopyToClipboard title="Copy AUR package name" content={AURPackage.Name} icon={Icon.CopyClipboard}/>
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
                         <Action.Push title="View PKGBUILD" target={<ReadPKGBUILD packageName={AURPackage.PackageBase} />} icon={Icon.NewDocument}/>
