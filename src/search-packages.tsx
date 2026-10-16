@@ -335,16 +335,19 @@ function ReadPKGBUILDDiffs({packageName} : {packageName:string|null} ){
     const [selectedCommit, setSelectedCommit] = useState<string>("")
     const [selectedID, setSelectedID] = useState<number>()
     const {diffs,isLoading:diffsIsLoading,error:diffsError,revalidate:diffsRevalidate} = useFetchPKGBUILDDiffs(packageName,selectedCommit)
-    
+    useEffect(() =>{
+        setSelectedCommit("")
+        setSelectedID(undefined)
+    },[packageName])
     return(
         <Detail 
         // @ts-expect-error to remove at next release when isLoading gets added
         isLoading={(PKGBUILDCommitsIsLoading || (diffsIsLoading && selectedID != undefined))}
-        markdown={`## **${packageName}** | PKGBUILD Changes  \n  ${ selectedID != undefined ?  `\n#### **Title:** ${PKGBUILDCommits[Number(selectedID)].title}  \n#### **Author:** ${PKGBUILDCommits[Number(selectedID)].author.replace(/[\r\n]+/gm,"")}  \n#### **Date:** ${new Date(PKGBUILDCommits[Number(selectedID)].date).toLocaleString()}  \n` : "" }---  \n${turndownService.turndown(diffs)}`} actions={
+        markdown={`## **${packageName}** | PKGBUILD Changes  \n  ${ selectedID != undefined ?  `\n#### **Title:** ${PKGBUILDCommits[Number(selectedID)].title}  \n#### **Author:** ${PKGBUILDCommits[Number(selectedID)].author.replace(/[\r\n]+/gm,"")}  \n#### **Date:** ${new Date(PKGBUILDCommits[Number(selectedID)].date).toLocaleString()} (${formatTime(PKGBUILDCommits[Number(selectedID)].date)}) \n` : "" }---  \n${turndownService.turndown(diffs)}`} actions={
             <ActionPanel>
                 <ActionPanel.Submenu title="Select commit to compare" icon={Icon.Clock}>
                     {PKGBUILDCommits.map((elementObj,index) =>
-                    <Action title={elementObj.title} icon={Icon.Git} onAction={() => {
+                    <Action title={formatTime(elementObj.date) + ' - ' + elementObj.title} icon={Icon.Git} onAction={() => {
                         setSelectedCommit(elementObj.hash)
                         setSelectedID(index)
                     }} key={index}/>
@@ -365,6 +368,28 @@ function formatBytes(bytes: number){
     const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+}
+// formatTime taken with very slight modifications from https://dev.to/ala_garbaa/format-time-ago-function-time-differences-in-typescript-5ag2
+function formatTime(dateTime: string){
+    let date = new Date(dateTime)
+    const seconds: number = Math.floor((new Date().getTime() - date.getTime()) / 1000)
+    const intervals: Record<string,number> = {
+        year: 31536000,
+        month: 2628000,
+        day: 86400,
+        hour: 3600,
+        minute: 60
+    }
+    for (const [unit, secondsInUnit] of Object.entries(intervals)){
+        const interval: number = Math.floor(seconds / secondsInUnit)
+        if (interval > 1){
+            return `${interval} ${unit}s ago`
+        } else if (interval === 1){
+            return `${interval} ${unit} ago`
+        }
+        
+    }
+    return "just now"
 }
 export default function ArchSeek(){
     const [query, setQuery] = useState("");
@@ -428,7 +453,7 @@ export default function ArchSeek(){
                 )}
                 {searchResults.AURResults.map((AURPackage,index) => 
                 <List.Item id={String('AUR-' + index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Provides)&& (AURPackageInfo?.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo?.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? ` (${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${new Date(AURPackage.FirstSubmitted * 1000).toLocaleString()}  \n**Last Updated:** ${new Date(AURPackage.LastModified * 1000).toLocaleString()} ${(typeof AURPackageInfo.OutOfDate === 'number') ? `  \n<span style="color:red">_**Flagged out-of-date**(${new Date(AURPackageInfo.OutOfDate * 1000).toLocaleDateString()})</span>_` : ""}`}/>
+                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Provides)&& (AURPackageInfo?.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo?.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? ` (${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${new Date(AURPackage.FirstSubmitted * 1000).toLocaleString()}  \n**Last Updated:** ${new Date(AURPackage.LastModified * 1000).toLocaleString()} (${formatTime(String(new Date(AURPackage.LastModified * 1000)))}) ${(typeof AURPackageInfo.OutOfDate === 'number') ? `  \n<span style="color:red">_**Flagged out-of-date**(${new Date(AURPackageInfo.OutOfDate * 1000).toLocaleDateString()})</span>_` : ""}`}/>
                 } accessories={[
                     { tag: { value: "AUR", color: Color.Green}}
                 ]} actions={
