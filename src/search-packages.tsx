@@ -319,6 +319,47 @@ function useFetchPKGBUILDDiffs(packageName:string|null,hash:string|null){
         revalidate:revalidate
     }
 }
+function useProbeDB(packageName:string|null){
+    let doWeExecute: boolean = true
+    let version: string = ""
+    let installed:boolean = false
+    if (packageName == null){
+        doWeExecute = false
+    }
+    if (packageName?.length == 0){
+        doWeExecute = false
+    }
+    if (prefs["run-probe"] == false){
+        doWeExecute = false
+    }
+    const {isLoading, data,revalidate,error} = useExec("/usr/bin/pacman",["-Q",`${packageName}`],{execute:doWeExecute})
+    
+    if (error){
+        console.log(error)
+    }
+    if (data){
+        if (data.startsWith("error")){
+            if (data == `error: package '${packageName}' was not found`){
+                installed = false
+                version = ""
+            }
+        } else if (data.startsWith(String(packageName))){
+            installed = true
+            const substrings = data.split(" ")
+            version = substrings.slice(1)[0]
+        }
+    } else{
+        version = ""
+        installed = false   
+    }
+    return{
+        isLoading:isLoading,
+        revalidate:revalidate,
+        installed:installed,
+        version:version
+    }
+
+}
 function ReadPKGBUILD({packageName}: {packageName:string|null}){
 const {PKGBUILD,isLoading,revalidate,error} = useFetchPKGBUILD(packageName)
     return(
@@ -424,7 +465,7 @@ export default function ArchSeek(){
         selectedPackage = ""
     }
     const {AURPackageInfo,isLoading:AURPackageInfoIsLoading,revalidate:AURPackageInfoRevalidate} = useGetMoreAURInfo(selectedAUR)
-    
+    const {revalidate:probingRevalidate,isLoading:probingIsLoading,version:probedVersion,installed:ProbedInstalled} = useProbeDB(selectedPackage)
     return(
         <List throttle={true} isLoading={AURIsLoading||OfficialIsLoading||AURPackageInfoIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
@@ -439,7 +480,7 @@ export default function ArchSeek(){
                 <>
                 {searchResults.officialResults.map((officialPackage,index) =>
                 <List.Item id={String('OFF-' + index)} title={officialPackage.pkgname} key={`${officialPackage.pkgname}-${officialPackage.repo}-${officialPackage.arch}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${officialPackage.pkgname}  \n**Architecture:** ${officialPackage.arch}  \n**Repository:** ${officialPackage.repo}  \n**Description:** ${officialPackage.pkgdesc}  \n**Upstream URL:** ${officialPackage.url}  \n**License(s):** ${Array.isArray(officialPackage.licenses) && (officialPackage.licenses?.length) > 0 ? `${officialPackage.licenses.toString()}  \n` : ""}**Maintainers:** ${officialPackage.maintainers}  \n**Package Size:** ${formatBytes(officialPackage.compressed_size)}  \n**Installed Size:** ${formatBytes(officialPackage.installed_size)}  \n**Last Packager:** ${officialPackage.packager}  \n**Build Date:** ${new Date(officialPackage.build_date).toLocaleString()}  \n**Last Updated:** ${new Date(officialPackage.last_update).toLocaleString()}  \n${typeof officialPackage.flag_date === 'string' && officialPackage.flag_date?.length > 0 ? `<span style="color:red">_**Flagged out-of-date on:** ${new Date(officialPackage.flag_date).toLocaleDateString()}</span>_`:""}`}/>
+                    <List.Item.Detail markdown={`# ${officialPackage.pkgname} ${officialPackage.pkgver}  \n**Architecture:** ${officialPackage.arch}  \n**Repository:** ${officialPackage.repo}  \n**Description:** ${officialPackage.pkgdesc}  \n**Upstream URL:** ${officialPackage.url}  \n**License(s):** ${Array.isArray(officialPackage.licenses) && (officialPackage.licenses?.length) > 0 ? `${officialPackage.licenses.toString()}  \n` : ""}**Maintainers:** ${officialPackage.maintainers}  \n**Package Size:** ${formatBytes(officialPackage.compressed_size)}  \n**Installed Size:** ${formatBytes(officialPackage.installed_size)}  \n**Last Packager:** ${officialPackage.packager}  \n**Build Date:** ${new Date(officialPackage.build_date).toLocaleString()}  \n**Last Updated:** ${new Date(officialPackage.last_update).toLocaleString()} ${typeof officialPackage.flag_date === 'string' && officialPackage.flag_date?.length > 0 ? `  \n<span style="color:red">_**Flagged out-of-date on:** ${new Date(officialPackage.flag_date).toLocaleDateString()}</span>_`:""} ${prefs["run-probe"] == true ? `  \n**Installed?:** ${ProbedInstalled} (${probedVersion})`: ""}`}/>
                 } accessories={[
                     { tag: {value: `${officialPackage.repo}`,color: Color.Yellow}},
 
@@ -457,7 +498,7 @@ export default function ArchSeek(){
                 )}
                 {searchResults.AURResults.map((AURPackage,index) => 
                 <List.Item id={String('AUR-' + index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
-                    <List.Item.Detail markdown={`# ${AURPackage.Name}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Provides)&& (AURPackageInfo?.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo?.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? ` (${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${new Date(AURPackage.FirstSubmitted * 1000).toLocaleString()}  \n**Last Updated:** ${new Date(AURPackage.LastModified * 1000).toLocaleString()} (${formatTime(String(new Date(AURPackage.LastModified * 1000)))}) ${(typeof AURPackageInfo.OutOfDate === 'number') ? `  \n<span style="color:red">_**Flagged out-of-date**(${new Date(AURPackageInfo.OutOfDate * 1000).toLocaleDateString()})</span>_` : ""}`}/>
+                    <List.Item.Detail markdown={`# ${AURPackage.Name} ${AURPackage.Version}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Provides)&& (AURPackageInfo?.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo?.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? ` (${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${new Date(AURPackage.FirstSubmitted * 1000).toLocaleString()}  \n**Last Updated:** ${new Date(AURPackage.LastModified * 1000).toLocaleString()} (${formatTime(String(new Date(AURPackage.LastModified * 1000)))}) ${(typeof AURPackageInfo.OutOfDate === 'number') ? `  \n<span style="color:red">_**Flagged out-of-date**(${new Date(AURPackageInfo.OutOfDate * 1000).toLocaleDateString()})</span>_` : ""}${prefs["run-probe"] == true ? `  \n**Installed? :** ${ProbedInstalled} (${probedVersion})`: ""}`}/>
                 } accessories={[
                     { tag: { value: "AUR", color: Color.Green}}
                 ]} actions={

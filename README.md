@@ -10,9 +10,11 @@ If you prefer to read the page in your browser, there's an action for that, too.
 This extension has two commands: Search Wiki, which as the name implies, allow to search articles on the Arch Wiki, and Search Package, which let you search packages both in the Arch packages repositories and the AUR. You can filter for both, or either of those, and have actions, like seeing recent PKGBUILD changes, reading the current PKGBUILD, and install the package on your system.
 
 
-## Settings
+## Preferences
 
-Currently, ArchSeek provides only one setting, which is the path to the AUR helper you want to use when installing an AUR package from the action menu.
+Currently, ArchSeek provides two settings: 
+- "AUR Helper", which set the path to the AUR helper you want to use when installing an AUR package from the action menu (default: `/usr/bin/yay`).
+- "Run Package Database Probing", which enable or disable probing of `pacman`'s installed package database to know if a selected package is installed or not (default: `disabled`).
 
 ## Installation
 As this extension is currently a work in progress, it is not yet shared in the Vicinae extension store. If you want to run it in your system, you need to do the following:
