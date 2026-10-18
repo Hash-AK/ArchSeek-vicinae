@@ -334,9 +334,6 @@ function useProbeDB(packageName:string|null){
     }
     const {isLoading, data,revalidate,error} = useExec("/bin/sh",["-c",`pacman -Q ${packageName} 2>/dev/null || true`],{execute:doWeExecute})
     
-    if (error){
-        console.log(error)
-    }
     if (data){
         if (data.startsWith("error")){
             if (data == `error: package '${packageName}' was not found`){

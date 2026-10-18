@@ -3,7 +3,10 @@
   "name": "archseek",
   "title": "ArchSeek",
   "description": "Vicinae launcher extension to search the Arch Wiki/Packages/AUR",
-  "categories": [],
+  "categories": [
+    "System",
+    "Developer Tools"
+  ],
   "license": "MIT",
   "author": "Hash-AK",
   "contributors": [],
