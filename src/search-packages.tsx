@@ -9,6 +9,7 @@ import {
 	Toast,
 	Color,
     getPreferenceValues,
+    Keyboard,
 } from "@vicinae/api";
 import TurndownService from "turndown"
 import {
@@ -76,7 +77,7 @@ interface AURPackageDescription{
     Version: string
 
 }
-interface AURPackageMoreInfoResult{ //sob
+interface AURPackageMoreInfoResult{
 resultcount: number
 results: AURPackageMoreInfoDescription[]
 type: string
@@ -178,7 +179,7 @@ function useGetMoreAURInfo(packageName : string|null){
         doWeExecute = false
         packageName = ""
     }
-    const {data,isLoading,error,revalidate} = useFetch<AURPackageMoreInfoResult>(`https://aur.archlinux.org/rpc/v5/info?arg[]=${encodeURIComponent(packageName)}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch AUR package description",message:String(error)})},async onData(){await showToast({style:Toast.Style.Success,title:"Package info fetched!"})}})
+    const {data,isLoading,error,revalidate} = useFetch<AURPackageMoreInfoResult>(`https://aur.archlinux.org/rpc/v5/info?arg[]=${encodeURIComponent(packageName)}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch AUR package description",message:String(error)})}})
     
     return {
         AURPackageInfo: data?.results[0] ?? defaultAurMoreInfoDescription,
@@ -210,10 +211,10 @@ function useSearchPackage(searchTerm: string, source: string){
         doWeExecuteAUR = false
     }
 
-    const {data:AURData,error:AURError,isLoading:AURIsLoading,revalidate:AURRevalidate} = useFetch<AURSearchResult>(`https://aur.archlinux.org/rpc/v5/search/${encodeURIComponent(searchTerm)}`,{execute:doWeExecuteAUR,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch the search results",message:String(error)})},async onData(){await showToast({style:Toast.Style.Success,title:"Search complete"})}})
+    const {data:AURData,error:AURError,isLoading:AURIsLoading,revalidate:AURRevalidate} = useFetch<AURSearchResult>(`https://aur.archlinux.org/rpc/v5/search/${encodeURIComponent(searchTerm)}`,{execute:doWeExecuteAUR,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch the search results",message:String(error)})}})
     // set to blank if no results
     searchResults.AURResults = AURData?.results ?? [] 
-    const {data:OfficialData,error:OfficialError,isLoading:OfficialIsLoading,revalidate:OfficialRevalidate} = useFetch<PackageSearchResult>(`https://archlinux.org/packages/search/json/?q=${encodeURIComponent(searchTerm)}`,{execute:doWeExecuteOfficial,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch the search results",message:String(error)})},async onData(){await showToast({style:Toast.Style.Success,title:"Search complete"})}})
+    const {data:OfficialData,error:OfficialError,isLoading:OfficialIsLoading,revalidate:OfficialRevalidate} = useFetch<PackageSearchResult>(`https://archlinux.org/packages/search/json/?q=${encodeURIComponent(searchTerm)}`,{execute:doWeExecuteOfficial,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch the search results",message:String(error)})}})
     searchResults.officialResults = OfficialData?.results ?? []
     return {
         searchResults,
@@ -230,7 +231,7 @@ function useFetchPKGBUILD(packageName:string|null){
     if (packageName?.length == 0){
         doWeExecute = false
     }
-    const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute,async onError(error){await showToast({title:"Failed to fetch PKGBUILD",style:Toast.Style.Failure,message:String(error)})},async onData(){await showToast({title:"PKGBUILD successfully fetched!",style:Toast.Style.Success})}})
+    const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute,async onError(error){await showToast({title:"Failed to fetch PKGBUILD",style:Toast.Style.Failure,message:String(error)})}})
     if (error){
         console.log(`Error: ${error}`)
     }
@@ -253,7 +254,7 @@ function useFetchPKGBUILDCommits(packageName:string|null){
         doWeExecute = false
     }
 
-    const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/atom/?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch commits list",message:String(error)})},async onData(){await showToast({title:"Commits successfully fetched!",style:Toast.Style.Success})}})
+    const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/atom/?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch commits list",message:String(error)})}})
     if (error){
         console.log(`Error: ${error}`)
     } 
@@ -306,7 +307,7 @@ function useFetchPKGBUILDDiffs(packageName:string|null,hash:string|null){
         diffText = "Select a commit to start."
         
     }
-    const {data,isLoading,error,revalidate} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/commit/?h=${encodeURIComponent(packageName)}&id=${hashRegex?.[1]}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch diffs",message:String(error)})},async onData(){await showToast({style:Toast.Style.Success,title:"Diffs fetched!"})}}) 
+    const {data,isLoading,error,revalidate} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/commit/?h=${encodeURIComponent(packageName)}&id=${hashRegex?.[1]}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch diffs",message:String(error)})}}) 
     if (data){
         const htmlDoc = new DOMParser().parseFromString(data,'text/html')
         let diffObj = htmlDoc.getElementsByClassName("diff").toString()
@@ -365,8 +366,10 @@ const {PKGBUILD,isLoading,revalidate,error} = useFetchPKGBUILD(packageName)
         isLoading={isLoading} 
         markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}  \n\`\`\`\``} actions={
             <ActionPanel>
-                <Action title="Reload PKGBUILD" onAction={revalidate} icon={Icon.ArrowClockwise}/>
                 <Action.CopyToClipboard title="Copy PKGBUILD" content={PKGBUILD} icon={Icon.CopyClipboard}/>
+                <Action.OpenInBrowser title="Open PKGBUILD in browser" url={`https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=${packageName}`} icon={{source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}}/>
+                <Action title="Reload PKGBUILD" onAction={revalidate} icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
+                
             </ActionPanel>
         }/>
     )
@@ -395,7 +398,9 @@ function ReadPKGBUILDDiffs({packageName} : {packageName:string|null} ){
                     )
                     }
                 </ActionPanel.Submenu>
-                <Action title="Reload commits" onAction={revalidate} icon={Icon.ArrowClockwise}/>
+                <ActionPanel.Section>
+                <Action title="Reload commits" onAction={revalidate} icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
+                </ActionPanel.Section>
 
             </ActionPanel>
         } />
@@ -464,7 +469,7 @@ export default function ArchSeek(){
     const {AURPackageInfo,isLoading:AURPackageInfoIsLoading,revalidate:AURPackageInfoRevalidate} = useGetMoreAURInfo(selectedAUR)
     const {revalidate:probingRevalidate,isLoading:probingIsLoading,version:probedVersion,installed:ProbedInstalled} = useProbeDB(selectedPackage)
     return(
-        <List throttle={true} isLoading={AURIsLoading||OfficialIsLoading||AURPackageInfoIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
+        <List throttle={true} isLoading={AURIsLoading||OfficialIsLoading||AURPackageInfoIsLoading} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)} searchBarAccessory={
         <List.Dropdown tooltip="Source" value={sourceDropdown} onChange={setSourceDropdown}>
             <List.Dropdown.Item title="All" value="All"/>
             <List.Dropdown.Item title="AUR" value="AUR"/>
@@ -486,9 +491,9 @@ export default function ArchSeek(){
                     <ActionPanel>
                         <Action.CopyToClipboard title="Copy package name" content={officialPackage.pkgname} icon={Icon.CopyClipboard}/>
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;sudo pacman -S --needed ${officialPackage.pkgname}`]} options={{hold:true}}/>
-                        <Action.OpenInBrowser title="Open package in the browser" url={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon="Arch_Linux_logo.svg"/>
-                        <Action.CopyToClipboard title="Copy upstream url to clipboard" content={officialPackage.url} icon={Icon.CopyClipboard}/>
-                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon={Icon.CopyClipboard}/>
+                        <Action.OpenInBrowser title="Open package in the browser" url={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon="Arch_Linux_logo.svg" shortcut={Keyboard.Shortcut.Common.Open}/>
+                        <Action.CopyToClipboard title="Copy upstream url to clipboard" content={officialPackage.url} icon={Icon.CopyClipboard} shortcut={Keyboard.Shortcut.Common.Copy}/>
+                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon={Icon.CopyClipboard} shortcut={Keyboard.Shortcut.Common.CopyDeeplink}/>
                     </ActionPanel>
                 }/>
 
@@ -502,12 +507,12 @@ export default function ArchSeek(){
                     <ActionPanel>
                         <Action.CopyToClipboard title="Copy AUR package name" content={AURPackage.Name} icon={Icon.CopyClipboard}/>
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
-                        <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg"/>
+                        <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg" shortcut={Keyboard.Shortcut.Common.Open}/>
                         <Action.Push title="View PKGBUILD" target={<ReadPKGBUILD packageName={AURPackage.PackageBase} />} icon={Icon.NewDocument}/>
                         <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs packageName={AURPackage.PackageBase} />} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
-                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`}/>
-                        <Action title="Reload package informations" onAction={AURPackageInfoRevalidate} icon={Icon.ArrowClockwise}/>
+                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon={Icon.CopyClipboard} />
+                        <Action title="Reload package informations" onAction={() => { AURPackageInfoRevalidate;probingRevalidate}} icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
                     </ActionPanel>
                 }/>
                 

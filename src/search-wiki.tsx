@@ -9,7 +9,7 @@ import {
 	showToast,
 	Toast,
 	Color,
-	useNavigation
+	Keyboard
 } from "@vicinae/api";
 import {
 	useEffect,
@@ -62,7 +62,7 @@ if (title == undefined){
 if (title?.length ==0){
 	doWeExecute = false
 }
-const {isLoading,data,revalidate,error} = useFetch<PageResult>(`https://wiki.archlinux.org/api.php?action=parse&page=${encodeURIComponent(title ?? "")}&format=json&prop=text&redirects=1`,{execute:doWeExecute,redirect:'follow',async onError(error){await showToast({title:"Failed to fetch wiki page",style:Toast.Style.Failure,message:String(error)})}, async onData(){await showToast({title:"Wiki page fetched successfully",style:Toast.Style.Success})}})
+const {isLoading,data,revalidate,error} = useFetch<PageResult>(`https://wiki.archlinux.org/api.php?action=parse&page=${encodeURIComponent(title ?? "")}&format=json&prop=text&redirects=1`,{execute:doWeExecute,redirect:'follow',async onError(error){await showToast({title:"Failed to fetch wiki page",style:Toast.Style.Failure,message:String(error)})}})
 let returnData : string|undefined
 if (data){
 	returnData = data?.parse?.text?.["*"]
@@ -135,7 +135,7 @@ export default function ArchSeek() {
 	const {wikiPage,isLoading:wikiPageIsLoading,revalidate:wikiPageRevalidate,error:WikiPageError} = useWikiPage(selectedTitle)
 
     return(
-        <List throttle={true} isLoading={wikiPageIsLoading||wikiTextIsLoading} searchText={query} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
+        <List throttle={true} isLoading={wikiPageIsLoading||wikiTextIsLoading} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
 			{query === "" && wikiText.titles.length === 0 ? (
 				<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
 ) : (
@@ -144,15 +144,18 @@ export default function ArchSeek() {
 				<List.Item.Detail  markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)}/>
 			} actions={
 				<ActionPanel>
-					<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} icon={Icon.CopyClipboard}/>
-					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="Arch_Linux_logo.svg"/>
 					<Action.Push title="Open in detail" target={
 						// @ts-expect-error to remove at next release when isLoading gets added
 						<Detail isLoading={wikiPageIsLoading} markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)} actions={
 							<ActionPanel>
-								<Action onAction={wikiPageRevalidate} title="Reload page" icon={Icon.ArrowClockwise}/>
+								<ActionPanel.Section>
+								<Action onAction={wikiPageRevalidate} title="Reload page" icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
+								</ActionPanel.Section>
 							</ActionPanel>
 						}/> } icon={Icon.AppWindow}/>
+					<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} icon={Icon.CopyClipboard}/>
+					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="Arch_Linux_logo.svg" shortcut={Keyboard.Shortcut.Common.Open}/>
+
 				</ActionPanel>
 			}/>
 		) 
