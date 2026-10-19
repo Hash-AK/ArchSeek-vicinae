@@ -493,7 +493,7 @@ export default function ArchSeek(){
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;sudo pacman -S --needed ${officialPackage.pkgname}`]} options={{hold:true}}/>
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon="Arch_Linux_logo.svg" shortcut={Keyboard.Shortcut.Common.Open}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={officialPackage.url} icon={Icon.CopyClipboard} shortcut={Keyboard.Shortcut.Common.Copy}/>
-                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon={Icon.CopyClipboard} shortcut={Keyboard.Shortcut.Common.CopyDeeplink}/>
+                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon={Icon.CopyClipboard} shortcut={Keyboard.Shortcut.Common.CopyPath}/>
                     </ActionPanel>
                 }/>
 
