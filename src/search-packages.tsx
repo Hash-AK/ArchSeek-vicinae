@@ -232,9 +232,7 @@ function useFetchPKGBUILD(packageName:string|null){
         doWeExecute = false
     }
     const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute,async onError(error){await showToast({title:"Failed to fetch PKGBUILD",style:Toast.Style.Failure,message:String(error)})}})
-    if (error){
-        console.log(`Error: ${error}`)
-    }
+
     return {
         PKGBUILD: data ?? "",
         isLoading,
@@ -255,9 +253,6 @@ function useFetchPKGBUILDCommits(packageName:string|null){
     }
 
     const {isLoading, data, revalidate,error} = useFetch<string>(`https://aur.archlinux.org/cgit/aur.git/atom/?h=${encodeURIComponent(packageName ?? "")}`,{execute:doWeExecute,async onError(error){await showToast({style:Toast.Style.Failure,title:"Failed to fetch commits list",message:String(error)})}})
-    if (error){
-        console.log(`Error: ${error}`)
-    } 
         let aurCommits : AURCommits[] = []
         if (data){
         const xmlDoc = new DOMParser().parseFromString(String(data),"text/xml")
@@ -333,15 +328,10 @@ function useProbeDB(packageName:string|null){
     if (prefs["run-probe"] == false){
         doWeExecute = false
     }
-    const {isLoading, data,revalidate,error} = useExec("/bin/sh",["-c",`pacman -Q ${packageName} 2>/dev/null || true`],{execute:doWeExecute})
+    const {isLoading, data,revalidate,error} = useExec("/bin/sh",["-c",`pacman -Q -- "${packageName}" 2>/dev/null || true`],{execute:doWeExecute})
     
     if (data){
-        if (data.startsWith("error")){
-            if (data == `error: package '${packageName}' was not found`){
-                installed = false
-                version = ""
-            }
-        } else if (data.startsWith(String(packageName))){
+        if (data.startsWith(String(packageName))){
             installed = true
             const substrings = data.split(" ")
             version = substrings.slice(1)[0]

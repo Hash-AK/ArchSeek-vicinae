@@ -12,6 +12,7 @@
   "contributors": [],
   "pastContributors": [],
   "icon": "Arch_Linux_logo.svg",
+  "platforms": ["Linux"],
   "commands": [
     {
       "name": "search-wiki",

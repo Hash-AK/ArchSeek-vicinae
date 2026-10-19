@@ -3,7 +3,19 @@ Welcome to the ArchSeek vicinae extension!
 
 This is an extension for the [vicinae launcher](https://github.com/vicinaehq/vicinae). It allows you to quickly query the Arch Wiki and read wiki pages directly from Vicinae! You can also search packages, both from official repos and the AUR, see their PKGBUILD, and even see the most recent commits/changes!
 
-If you prefer to read the page in your browser, there's an action for that, too.
+If you prefer to read the page in your browser, there's an action for that, too.  
+
+![AUR package search results](screenshots/Search-AUR-demo.png)
+_Results of an AUR Package search_  
+
+
+![Choose a commit](screenshots/commits-list.png)
+_Choose a commit to see it's changes in the AUR PKGBUILD Changes menu_
+
+
+![colored diffs](screenshots/colored-diffs.png)  
+_Colored diffs viewer_
+
 
 ## Usage
 
@@ -16,10 +28,15 @@ Currently, ArchSeek provides two settings:
 - "AUR Helper", which set the path to the AUR helper you want to use when installing an AUR package from the action menu (default: `/usr/bin/yay`).
 - "Run Package Database Probing", which enable or disable probing of `pacman`'s installed package database to know if a selected package is installed or not (default: `disabled`).
 
-## Installation
-As this extension is currently a work in progress, it is not yet shared in the Vicinae extension store. If you want to run it in your system, you need to do the following:
+## Requirements
 
-1) Make sure to have ```npm``` installed on your system
+This extension is made for Arch Linux/Arch based distributions. You need to have `pacman` and an AUR helper installed on your system (`yay`,`paru`,etc) if you want to be able to install AUR packages from the Actions menu.
+
+
+## Installation
+As this extension is currently a work in progress, it is not yet published on the Vicinae extension store. If you want to run it in your system, you need to do the following:
+
+1) Make sure to have `npm` installed on your system
 2) clone this repository: 
 ```bash
 git clone https://github.com/Hash-AK/ArchSeek-vicinae
@@ -34,11 +51,13 @@ npm install
 ```
 then:
 ```bash
-npm run dev
+npm run build
 ```
-You can even kill the process afterward   
-
 5) Now in Vicinae you should see "ArchSeek"!
 
 ## AI Disclosure
 During this project, I sometimes used AI to debug/help me find solutions for bugs that where occurring. No code was directly taken from AI, thought.
+
+## License
+
+This project is licensed under the MIT license. You can read more about it in the [LICENSE](LICENSE) file.
