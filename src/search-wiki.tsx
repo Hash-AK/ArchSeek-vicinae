@@ -149,7 +149,11 @@ export default function ArchSeek() {
 						<Detail isLoading={wikiPageIsLoading} markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)} actions={
 							<ActionPanel>
 								<ActionPanel.Section>
-								<Action onAction={wikiPageRevalidate} title="Reload page" icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
+									<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} icon={Icon.CopyClipboard}/>
+									<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="Arch_Linux_logo.svg" shortcut={Keyboard.Shortcut.Common.Open}/>
+								</ActionPanel.Section>
+								<ActionPanel.Section>
+									<Action onAction={wikiPageRevalidate} title="Reload page" icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
 								</ActionPanel.Section>
 							</ActionPanel>
 						}/> } icon={Icon.AppWindow}/>
