@@ -512,7 +512,7 @@ export default function ArchSeek(){
                         <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs packageName={AURPackage.PackageBase} />} icon={Icon.Clock}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon={Icon.CopyClipboard} />
-                        <Action title="Reload package informations" onAction={() => { AURPackageInfoRevalidate;probingRevalidate}} icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
+                        <Action title="Reload package informations" onAction={() => { AURPackageInfoRevalidate();probingRevalidate()}} icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
                     </ActionPanel>
                 }/>
                 
