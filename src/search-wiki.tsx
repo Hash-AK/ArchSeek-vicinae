@@ -13,6 +13,7 @@ import {
 } from "@vicinae/api";
 import {
 	useEffect,
+	useMemo,
 	useState
 } from 'react';
 import TurndownService, * as Turndown from "turndown"
@@ -133,18 +134,19 @@ export default function ArchSeek() {
 		selectedTitle = ""
 	}
 	const {wikiPage,isLoading:wikiPageIsLoading,revalidate:wikiPageRevalidate,error:WikiPageError} = useWikiPage(selectedTitle)
-    return(
+    const body = useMemo(() => turndownService.turndown(wikiPage),[wikiPage])
+	return(
         <List throttle={true} isLoading={wikiPageIsLoading||wikiTextIsLoading} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
 			{query === "" && wikiText.titles.length === 0 ? (
 				<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
 ) : (
 		 wikiText.titles.map((title, index) =>
 			<List.Item id={String(index)} key={title} title={title} icon="Arch_Linux_logo.svg" detail={
-				<List.Item.Detail  markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)}/>
+				<List.Item.Detail  markdown={`# ${title}\n\n`+body}/>
 			} actions={
 				<ActionPanel>
 					<Action.Push title="Open in detail" target={
-						<Detail isLoading={wikiPageIsLoading} markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)} actions={
+						<Detail isLoading={wikiPageIsLoading} markdown={`# ${title}\n\n`+body} actions={
 							<ActionPanel>
 								<ActionPanel.Section>
 									<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} icon={Icon.CopyClipboard}/>

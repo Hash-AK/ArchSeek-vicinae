@@ -496,10 +496,10 @@ export default function ArchSeek(){
                         <Action.CopyToClipboard title="Copy AUR package name" content={AURPackage.Name} icon={Icon.CopyClipboard}/>
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
                         <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg" shortcut={Keyboard.Shortcut.Common.Open}/>
-                        <Action.Push title="View PKGBUILD" target={<ReadPKGBUILD packageName={AURPackage.PackageBase} />} icon={Icon.NewDocument}/>
-                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs packageName={AURPackage.PackageBase} />} icon={Icon.Clock}/>
-                        <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard}/>
-                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon={Icon.CopyClipboard} />
+                        <Action.Push title="View PKGBUILD" target={<ReadPKGBUILD packageName={AURPackage.PackageBase} />} icon={Icon.NewDocument} shortcut={{key:"v",modifiers:["cmd","shift"]}}/>
+                        <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs packageName={AURPackage.PackageBase} />} icon={Icon.Clock} shortcut={{key: "d",modifiers:["cmd","shift"]}}/>
+                        <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard} shortcut={Keyboard.Shortcut.Common.Copy}/>
+                        <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon={Icon.CopyClipboard} shortcut={Keyboard.Shortcut.Common.CopyPath}/>
                         <Action title="Reload package informations" onAction={() => { AURPackageInfoRevalidate();probingRevalidate()}} icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
                     </ActionPanel>
                 }/>
