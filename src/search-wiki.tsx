@@ -133,7 +133,6 @@ export default function ArchSeek() {
 		selectedTitle = ""
 	}
 	const {wikiPage,isLoading:wikiPageIsLoading,revalidate:wikiPageRevalidate,error:WikiPageError} = useWikiPage(selectedTitle)
-
     return(
         <List throttle={true} isLoading={wikiPageIsLoading||wikiTextIsLoading} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
 			{query === "" && wikiText.titles.length === 0 ? (
@@ -145,7 +144,6 @@ export default function ArchSeek() {
 			} actions={
 				<ActionPanel>
 					<Action.Push title="Open in detail" target={
-						// @ts-expect-error to remove at next release when isLoading gets added
 						<Detail isLoading={wikiPageIsLoading} markdown={`# ${title}\n\n`+turndownService.turndown(wikiPage)} actions={
 							<ActionPanel>
 								<ActionPanel.Section>

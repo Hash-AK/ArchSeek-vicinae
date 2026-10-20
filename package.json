@@ -12,7 +12,9 @@
   "contributors": [],
   "pastContributors": [],
   "icon": "Arch_Linux_logo.svg",
-  "platforms": ["Linux"],
+  "platforms": [
+    "Linux"
+  ],
   "commands": [
     {
       "name": "search-wiki",
@@ -37,7 +39,7 @@
       "required": true
     },
     {
-      "name":"run-probe",
+      "name": "run-probe",
       "title": "Run Package Database Probing",
       "label": "Run Probe",
       "description": "If enabled, this will probe your currently installed package list to verify if the selected package is installed or not.",
@@ -54,11 +56,10 @@
   },
   "dependencies": {
     "@raycast/utils": "^2.3.2",
-    "@vicinae/api": "^0.28.1",
-    "turndown-plugin-gfm": "^1.0.2",
+    "@vicinae/api": "^0.29.2",
     "@xmldom/xmldom": "^0.9.12",
-    "turndown": "^7.2.4"
-
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.2",
