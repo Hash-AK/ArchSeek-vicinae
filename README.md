@@ -10,7 +10,7 @@ _Results of an AUR Package search_
 
 
 ![Choose a commit](screenshots/commits-list.png)
-_Choose a commit to see it's changes in the AUR PKGBUILD Changes menu_
+_Choose a commit to see its changes in the AUR PKGBUILD Changes menu_
 
 
 ![colored diffs](screenshots/colored-diffs.png)  
@@ -19,14 +19,14 @@ _Colored diffs viewer_
 
 ## Usage
 
-This extension has two commands: Search Wiki, which as the name implies, allow to search articles on the Arch Wiki, and Search Package, which let you search packages both in the Arch packages repositories and the AUR. You can filter for both, or either of those, and have actions, like seeing recent PKGBUILD changes, reading the current PKGBUILD, and install the package on your system.
+This extension has two commands: Search Wiki, which as the name implies, allow to search articles on the Arch Wiki, and Search Packages, which let you search packages both in the Arch packages repositories and the AUR. You can filter for both, or either of those, and have actions, like seeing recent PKGBUILD changes, reading the current PKGBUILD, and install the package on your system.
 
 
 ## Preferences
 
 Currently, ArchSeek provides two settings: 
-- "AUR Helper", which set the path to the AUR helper you want to use when installing an AUR package from the action menu (default: `/usr/bin/yay`).
-- "Run Package Database Probing", which enable or disable probing of `pacman`'s installed package database to know if a selected package is installed or not (default: `disabled`).
+- "AUR Helper", which sets the path to the AUR helper you want to use when installing an AUR package from the action menu (default: `/usr/bin/yay`).
+- "Run Package Database Probing", which enables or disables probing of `pacman`'s installed package database to know if a selected package is installed or not (default: `disabled`).
 
 ## Requirements
 
@@ -56,7 +56,7 @@ npm run build
 5) Now in Vicinae you should see "ArchSeek"!
 
 ## AI Disclosure
-During this project, I sometimes used AI to debug/help me find solutions for bugs that where occurring. No code was directly taken from AI, thought.
+During this project, I sometimes used AI to debug/help me find solutions for bugs that were occurring. No code was directly taken from AI, thought.
 
 ## License
 
