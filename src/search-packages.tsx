@@ -356,7 +356,7 @@ const {PKGBUILD,isLoading,revalidate,error} = useFetchPKGBUILD(packageName)
         markdown={`# PKGBUILD  \n\`\`\`  \n${PKGBUILD}  \n\`\`\`\``} actions={
             <ActionPanel>
                 <Action.CopyToClipboard title="Copy PKGBUILD" content={PKGBUILD} icon={Icon.CopyClipboard}/>
-                <Action.OpenInBrowser title="Open PKGBUILD in browser" url={`https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=${packageName}`} icon={{source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}}/>
+                <Action.OpenInBrowser title="Open PKGBUILD in browser" url={`https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=${packageName}`} icon={{source: "extension_icon.png", tintColor: Color.SecondaryText}}/>
                 <Action title="Reload PKGBUILD" onAction={revalidate} icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
                 
             </ActionPanel>
@@ -465,11 +465,11 @@ export default function ArchSeek(){
         </List.Dropdown>
     }>
             {query === "" ?(
-                <List.EmptyView title="No Package Found" description="Try to search something else." icon={{source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}}/>
+                <List.EmptyView title="No Package Found" description="Try to search something else." icon={{source: "extension_icon.png", tintColor: Color.SecondaryText}}/>
             ) : (
                 <>
                 {searchResults.officialResults.map((officialPackage,index) =>
-                <List.Item id={String('OFF-' + index)} title={officialPackage.pkgname} key={`${officialPackage.pkgname}-${officialPackage.repo}-${officialPackage.arch}`} icon="Arch_Linux_logo.svg" detail={
+                <List.Item id={String('OFF-' + index)} title={officialPackage.pkgname} key={`${officialPackage.pkgname}-${officialPackage.repo}-${officialPackage.arch}`} icon="extension_icon.png" detail={
                     <List.Item.Detail markdown={`# ${officialPackage.pkgname} ${officialPackage.pkgver}  \n**Architecture:** ${officialPackage.arch}  \n**Repository:** ${officialPackage.repo}  \n**Description:** ${officialPackage.pkgdesc}  \n**Upstream URL:** ${officialPackage.url}  \n**License(s):** ${Array.isArray(officialPackage.licenses) && (officialPackage.licenses?.length) > 0 ? `${officialPackage.licenses.toString()}  \n` : ""}**Maintainers:** ${officialPackage.maintainers}  \n**Package Size:** ${formatBytes(officialPackage.compressed_size)}  \n**Installed Size:** ${formatBytes(officialPackage.installed_size)}  \n**Last Packager:** ${officialPackage.packager}  \n**Build Date:** ${new Date(officialPackage.build_date).toLocaleString()}  \n**Last Updated:** ${new Date(officialPackage.last_update).toLocaleString()} ${typeof officialPackage.flag_date === 'string' && officialPackage.flag_date?.length > 0 ? `  \n<span style="color:red">_**Flagged out-of-date on:** ${new Date(officialPackage.flag_date).toLocaleDateString()}</span>_`:""} ${prefs["run-probe"] == true ? `  \n**Installed?:** ${(ProbedInstalled) ? `<span style="color:green"> Yes (${probedVersion})</span>` : '<span style="color:red"> No</span>'}`: ""}`}/>
                 } accessories={[
                     { tag: {value: `${officialPackage.repo}`,color: Color.Yellow}},
@@ -479,7 +479,7 @@ export default function ArchSeek(){
                     <ActionPanel>
                         <Action.CopyToClipboard title="Copy package name" content={officialPackage.pkgname} icon={Icon.CopyClipboard}/>
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;sudo pacman -S --needed ${officialPackage.pkgname}`]} options={{hold:true}}/>
-                        <Action.OpenInBrowser title="Open package in the browser" url={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon="Arch_Linux_logo.svg" shortcut={Keyboard.Shortcut.Common.Open}/>
+                        <Action.OpenInBrowser title="Open package in the browser" url={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon="extension_icon.png" shortcut={Keyboard.Shortcut.Common.Open}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={officialPackage.url} icon={Icon.CopyClipboard} shortcut={Keyboard.Shortcut.Common.Copy}/>
                         <Action.CopyToClipboard title="Copy package url to clipboard" content={`https://archlinux.org/packages/${officialPackage.repo}/${officialPackage.arch}/${officialPackage.pkgname}/`} icon={Icon.CopyClipboard} shortcut={Keyboard.Shortcut.Common.CopyPath}/>
                     </ActionPanel>
@@ -487,7 +487,7 @@ export default function ArchSeek(){
 
                 )}
                 {searchResults.AURResults.map((AURPackage,index) => 
-                <List.Item id={String('AUR-' + index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="Arch_Linux_logo.svg" detail={
+                <List.Item id={String('AUR-' + index)} title={AURPackage.Name} key={`${AURPackage.ID}`} icon="extension_icon.png" detail={
                     <List.Item.Detail markdown={`# ${AURPackage.Name} ${AURPackage.Version}  \n**Package Base:** ${AURPackage.PackageBase}  \n**Description:** ${AURPackage.Description}  \n**Upstream URL:** ${AURPackage.URL}  \n${Array.isArray(AURPackageInfo?.Keywords) && (AURPackageInfo?.Keywords?.length) > 0 ?  `**Keywords:** ${AURPackageInfo.Keywords.toString()}  \n`: "" }${Array.isArray(AURPackageInfo?.License) && (AURPackageInfo?.License?.length) > 0 ? `**Licenses:** ${AURPackageInfo.License.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Conflicts) && (AURPackageInfo.Conflicts?.length) >0 ?`**Conflicts:** ${AURPackageInfo.Conflicts.toString()}  \n` : ""}${ Array.isArray(AURPackageInfo?.Provides)&& (AURPackageInfo?.Provides?.length) > 0 ? `**Provides:** ${AURPackageInfo.Provides.toString()}  \n` : ""}**Submitter:** ${AURPackageInfo?.Submitter}  \n**Maintainers:** ${AURPackage.Maintainer}${Array.isArray(AURPackageInfo.CoMaintainers)&&(AURPackageInfo.CoMaintainers?.length) >0 ? ` (${AURPackageInfo.CoMaintainers.toString()})` : ""}  \n**Votes:** ${AURPackage.NumVotes}  \n**Popularity:** ${AURPackage.Popularity}  \n**First Submitted:** ${new Date(AURPackage.FirstSubmitted * 1000).toLocaleString()}  \n**Last Updated:** ${new Date(AURPackage.LastModified * 1000).toLocaleString()} (${formatTime(String(new Date(AURPackage.LastModified * 1000)))}) ${(typeof AURPackageInfo.OutOfDate === 'number') ? `  \n<span style="color:red">_**Flagged out-of-date**(${new Date(AURPackageInfo.OutOfDate * 1000).toLocaleDateString()})</span>_` : ""}${prefs["run-probe"] == true ? `  \n**Installed? :** ${(ProbedInstalled ? `<span style="color:green"> Yes (${probedVersion})</span>` : '<span style="color:red"> No</span>')}`: ""}`}/>
                 } accessories={[
                     { tag: { value: "AUR", color: Color.Green}}
@@ -495,7 +495,7 @@ export default function ArchSeek(){
                     <ActionPanel>
                         <Action.CopyToClipboard title="Copy AUR package name" content={AURPackage.Name} icon={Icon.CopyClipboard}/>
                         <Action.RunInTerminal title="Install package" args={["/bin/bash","-c",`set -x;${[prefs["aur-helper"]]} -S --needed ${AURPackage.Name}`]} options={{hold:true}} />
-                        <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="Arch_Linux_logo.svg" shortcut={Keyboard.Shortcut.Common.Open}/>
+                        <Action.OpenInBrowser title="Open package in the browser" url={`https://aur.archlinux.org/packages/${AURPackage.Name}`} icon="extension_icon.png" shortcut={Keyboard.Shortcut.Common.Open}/>
                         <Action.Push title="View PKGBUILD" target={<ReadPKGBUILD packageName={AURPackage.PackageBase} />} icon={Icon.NewDocument} shortcut={{key:"v",modifiers:["cmd","shift"]}}/>
                         <Action.Push title="View PKGBUILD changes" target={<ReadPKGBUILDDiffs packageName={AURPackage.PackageBase} />} icon={Icon.Clock} shortcut={{key: "d",modifiers:["cmd","shift"]}}/>
                         <Action.CopyToClipboard title="Copy upstream url to clipboard" content={AURPackage.URL} icon={Icon.CopyClipboard} shortcut={Keyboard.Shortcut.Common.Copy}/>

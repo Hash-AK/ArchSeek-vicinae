@@ -138,10 +138,10 @@ export default function ArchSeek() {
 	return(
         <List throttle={true} isLoading={wikiPageIsLoading||wikiTextIsLoading} onSearchTextChange={setQuery} isShowingDetail searchBarPlaceholder="Enter a search term to start" onSelectionChange={(id) => setSelectedId(id)}>
 			{query === "" && wikiText.titles.length === 0 ? (
-				<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "Arch_Linux_logo.svg", tintColor: Color.SecondaryText}} />
+				<List.EmptyView title="No Page found" description="Try to search something else." icon={{ source: "extension_icon.png", tintColor: Color.SecondaryText}} />
 ) : (
 		 wikiText.titles.map((title, index) =>
-			<List.Item id={String(index)} key={title} title={title} icon="Arch_Linux_logo.svg" detail={
+			<List.Item id={String(index)} key={title} title={title} icon="extension_icon.png" detail={
 				<List.Item.Detail  markdown={`# ${title}\n\n`+body}/>
 			} actions={
 				<ActionPanel>
@@ -150,7 +150,7 @@ export default function ArchSeek() {
 							<ActionPanel>
 								<ActionPanel.Section>
 									<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} icon={Icon.CopyClipboard}/>
-									<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="Arch_Linux_logo.svg" shortcut={Keyboard.Shortcut.Common.Open}/>
+									<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="extension_icon.png" shortcut={Keyboard.Shortcut.Common.Open}/>
 								</ActionPanel.Section>
 								<ActionPanel.Section>
 									<Action onAction={wikiPageRevalidate} title="Reload page" icon={Icon.ArrowClockwise} shortcut={Keyboard.Shortcut.Common.Refresh}/>
@@ -158,7 +158,7 @@ export default function ArchSeek() {
 							</ActionPanel>
 						}/> } icon={Icon.AppWindow}/>
 					<Action.CopyToClipboard title="Copy wiki url to clipboard" content={wikiText.urls[index]} icon={Icon.CopyClipboard}/>
-					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="Arch_Linux_logo.svg" shortcut={Keyboard.Shortcut.Common.Open}/>
+					<Action.OpenInBrowser title="Open wiki page in browser" url={wikiText.urls[index]} icon="extension_icon.png" shortcut={Keyboard.Shortcut.Common.Open}/>
 
 				</ActionPanel>
 			}/>
