@@ -27,13 +27,7 @@ turndownService.remove(function (node){
 }).remove(function (node){
 	return node.getAttribute('class') === 'mw-editsection'
 })
-/*turndownService.addRule('codeIndent',{
-	filter: ['pre','code'],
-	replacement: function(content){
-		return '```\n' + content + '```\n'
-	}
-})
-*/
+
 // custom interface to match Arch Wiki's response
 interface SearchResult {
 	query: string;
